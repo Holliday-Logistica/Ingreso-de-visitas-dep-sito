@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Control de Visitas · Depósito</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--tx:#14213d;--mut:#6b7280;--br:#e3e7ef;--ac:#f59e0b;--ac2:#1d3557;--ok:#16a34a;--bad:#dc2626;--in:#f8fafc}
 @media (prefers-color-scheme:dark){:root{--bg:#0d1420;--card:#16202f;--tx:#eef2f8;--mut:#9aa7ba;--br:#26344a;--ac2:#274a78;--in:#0f1826}}
@@ -68,15 +69,20 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .lbl .cel b{font-size:19mm;line-height:1;font-weight:900}
 .lbl .pn{font-weight:900;font-size:4.6mm}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow:auto}
+.fx{width:var(--lw,90mm);height:var(--lh,50mm);padding:4mm;display:flex;gap:4mm;align-items:center;background:#fff;color:#000;border:1px solid #000;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+.fx .q{height:calc(var(--lh,50mm) - 8mm);width:calc(var(--lh,50mm) - 8mm);flex:none}
+.fx .q img,.fx .q canvas{width:100%!important;height:100%!important;image-rendering:pixelated;display:block}
+.fx .r{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;text-align:center}
+.fx .t{background:#000;color:#fff;font-weight:900;font-size:5mm;letter-spacing:.2em;padding:1.2mm 0}
+.fx small{display:block;font-size:2.8mm;font-weight:700;letter-spacing:.1em}
+.fx .n{font-size:15mm;font-weight:900;line-height:1}
+.fx .s{font-size:2.5mm;font-weight:700;line-height:1.2}
 @media print{
- #lblmodal:not(.hide){position:static;background:none;padding:0;display:block!important}
- body.lbl-open #t2{display:none!important}
- @page{size:100mm 100mm;margin:0}
  html,body{background:#fff!important;margin:0;padding:0}
  .np{display:none!important}
  #sheet{display:block;gap:0}
- .lbl{border:0;break-after:page;page-break-after:always}
- .lbl:last-child{break-after:auto;page-break-after:auto}
+ .fx{border:0;break-after:page;page-break-after:always}
+ .fx:last-child{break-after:auto;page-break-after:auto}
 }
 </style>
 </head>
@@ -105,6 +111,10 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <div id="t1" class="grid2 np">
   <div>
     <div class="card">
+      <label style="margin-top:0">📷 Escanear colgante (lector USB o cámara)</label>
+      <div style="display:flex;gap:8px"><input id="scanin" placeholder="Escaneá el QR del colgante" autocomplete="off" onkeydown="if(event.key==='Enter')leerScan(this.value)"><button class="pri" style="width:auto;margin:0" onclick="camara()">📷</button></div>
+      <div class="small" id="scmsg" style="min-height:1.2em;margin-top:4px"></div>
+      <hr style="border:0;border-top:1px solid var(--br);margin:10px 0 14px">
       <h2>Registrar ingreso</h2>
       <label>Nombre y apellido *</label><input id="nombre" autocomplete="off" placeholder="Ej: Juan Pérez">
       <div class="row">
@@ -141,7 +151,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <div id="t2" class="hide">
   <div style="max-width:1040px;margin:0 auto 20px;padding:0 16px" class="np">
     <div class="card">
-      <h2>Colgantes fijos para Zebra ZD421 · etiqueta 100×100 mm</h2>
+      <h2>Colgantes fijos para Zebra ZD421 · etiqueta <span class="tam"></span></h2>
       <div class="row" style="max-width:360px">
         <div><label>Desde N°</label><input id="d1" type="number" min="1" value="1"></div>
         <div><label>Hasta N°</label><input id="d2" type="number" min="1"></div>
@@ -150,23 +160,27 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
         <button onclick="armar()">Vista previa</button>
         <button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir</button>
       </div>
-      <p class="small" style="margin-top:12px">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b>100 × 100 mm</b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
+      <p class="small" style="margin-top:12px">Los QR apuntan a: <b id="burl"></b></p><div class="err" id="urlwarn"></div><p class="small">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b class="tam"></b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
     </div>
   </div>
   <div id="sheet"></div>
 </div>
 </div>
 
-<div id="lblmodal" class="modal hide">
-  <div id="lblArea"></div>
-  <div class="np" style="display:flex;gap:10px"><button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir etiqueta</button><button onclick="cerrarEt()">Cerrar</button></div>
+<div id="scanmodal" class="modal hide np">
+  <video id="vid" playsinline muted style="max-width:100%;max-height:60vh;border-radius:14px;background:#000"></video><canvas id="cv" class="hide"></canvas>
+  <div id="scanmsg" style="color:#fff">Apuntá al QR del colgante</div>
+  <button onclick="cerrarCam()">Cerrar</button>
 </div>
 
 <script>
 /* ===== CONFIGURACIÓN ===== */
 const CONFIG={
   COLGANTES:30,          // cantidad de colgantes
-  FIREBASE_URL:'',       // ej: 'https://mi-deposito-default-rtdb.firebaseio.com'  (vacío = solo este equipo)
+  FIREBASE_URL:'https://retiro-de-pedidos-default-rtdb.firebaseio.com',
+  ETIQ_W:90,             // ancho de la etiqueta en mm
+  ETIQ_H:50,             // alto de la etiqueta en mm
+  BASE_URL:'',           // opcional: dirección pública fija de esta página (si se imprime desde otro lugar)
   PIN:'',                // PIN opcional para abrir la pantalla de recepción
 };
 /* ========================= */
@@ -178,7 +192,10 @@ const pad=n=>String(n).padStart(2,'0');
 const num=i=>pad(i);
 const fh=t=>{const d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const base=()=>location.href.split('#')[0];
+const base=()=>CONFIG.BASE_URL||location.href.split('#')[0];
+(function(){const st=document.createElement('style');
+  st.textContent=`:root{--lw:${CONFIG.ETIQ_W}mm;--lh:${CONFIG.ETIQ_H}mm}@media print{@page{size:${CONFIG.ETIQ_W}mm ${CONFIG.ETIQ_H}mm;margin:0}}`;
+  document.head.appendChild(st)})();
 const mask=d=>{const x=String(d||'').replace(/\D/g,'');return x?'•••'+x.slice(-3):'—'};
 
 /* ---- almacenamiento: Firebase (compartido) o localStorage (este equipo) ---- */
@@ -233,7 +250,7 @@ async function vistaScan(n){
 /* ---- recepción ---- */
 let col={},selN=null;
 async function refresh(){
-  try{col=(await dbGet('colgantes'))||{};$('modo').textContent=FB?'🟢 Base de datos compartida conectada':'💻 Datos guardados en este equipo · la etiqueta QR de cada visita se lee desde cualquier celular'}
+  try{col=(await dbGet('colgantes'))||{};$('modo').textContent=FB?'🟢 Base de datos compartida conectada':'🟡 Sin base de datos compartida: los QR fijos solo se leen en este equipo'}
   catch(e){$('modo').textContent='🔴 Sin conexión con la base de datos'}
   renderGrid();fillSel()}
 function renderGrid(){
@@ -253,20 +270,7 @@ function pick(i){
   d.classList.remove('hide');
   d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${esc(v.e)}</span>
   <dl><dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
-  <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>
-  <button style="width:100%;margin-top:8px" onclick="reimp(${i})">🖨 Imprimir etiqueta de esta visita</button>`}
-const reimp=i=>{const v=col['c'+num(i)];if(v)etiquetaVisita(num(i),v)};
-function etiquetaVisita(n,v){
-  const k=String(v.d||'').replace(/\D/g,'').slice(-3);
-  $('lblArea').innerHTML=`<div class="lbl"><div class="t">VISITA</div>
-  <div class="cl">${esc(v.n)}${v.e?`<div style="font-size:4.2mm;font-weight:700">${esc(v.e)}</div>`:''}</div>
-  <div class="mid"><div class="q"></div><div class="cel"><small>COLGANTE</small><b>${esc(n)}</b></div></div>
-  <div class="pn">VÁLIDO HASTA ${fh(v.t+v.h*3600000)}</div>
-  <div class="s">${esc(v.m).toUpperCase()} · VISITA A: ${esc(v.r).toUpperCase()}</div></div>`;
-  const data={n:v.n,e:v.e,m:v.m,r:v.r,p:v.p,h:v.h,t:v.t,c:n,k};
-  try{new QRCode($('lblArea').querySelector('.q'),{text:base()+'#d='+b64e(data),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}
-  $('lblmodal').classList.remove('hide');document.body.classList.add('lbl-open')}
-function cerrarEt(){$('lblmodal').classList.add('hide');document.body.classList.remove('lbl-open')}
+  <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>`}
 async function guardar(){
   const g=id=>$(id).value.trim(),n=$('colsel').value;
   if(!g('nombre')||!g('dni')||!g('resp')){$('err').textContent='Completá nombre, DNI y a quién visita.';return}
@@ -279,7 +283,7 @@ async function guardar(){
     $('res').classList.remove('hide');
     $('res').innerHTML=`<div class="big"><div class="small">ENTREGAR COLGANTE</div><div class="num">${n}</div><b>${esc(v.n)}</b><div class="small">Válido hasta ${fh(v.t+v.h*3600000)}</div></div>`;
     ['nombre','dni','tel','emp','pat','resp'].forEach(i=>$(i).value='');
-    await refresh();etiquetaVisita(n,v);
+    await refresh();$('nombre').focus();
   }catch(e){$('err').textContent='No se pudo guardar. Revisá la conexión.'}}
 async function salida(i){
   const v=col['c'+num(i)];if(!v)return;
@@ -305,14 +309,44 @@ function armar(){
   let a=Math.max(1,+$('d1').value||1),b=Math.min(999,+$('d2').value||CONFIG.COLGANTES);
   if(b<a)b=a;const s=$('sheet');s.innerHTML='';
   for(let i=a;i<=b;i++){
-    const d=document.createElement('div');d.className='lbl';
-    d.innerHTML=`<div class="t">VISITA</div><div class="q"></div><div class="n">N° ${num(i)}</div><div class="s">ESCANEAR PARA VER DATOS · DEVOLVER EN RECEPCIÓN</div>`;
+    const d=document.createElement('div');d.className='fx';
+    d.innerHTML=`<div class="q"></div><div class="r"><div class="t">VISITA</div><div><small>COLGANTE N°</small><div class="n">${num(i)}</div></div><div class="s">ESCANEAR PARA VER DATOS<br>DEVOLVER EN RECEPCIÓN</div></div>`;
     s.appendChild(d);
     try{new QRCode(d.querySelector('.q'),{text:base()+'#b='+num(i),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}}
 function tab(n){
   $('t1').classList.toggle('hide',n!==1);$('t2').classList.toggle('hide',n!==2);
   $('b1').classList.toggle('on',n===1);$('b2').classList.toggle('on',n===2);
-  if(n===2&&!$('sheet').children.length){$('d2').value=CONFIG.COLGANTES;armar()}}
+  if(n===2){
+    document.querySelectorAll('.tam').forEach(e=>e.textContent=CONFIG.ETIQ_W+' × '+CONFIG.ETIQ_H+' mm');
+    $('burl').textContent=base();
+    $('urlwarn').textContent=(/^https?:/.test(location.protocol)||CONFIG.BASE_URL)?'':'⚠ Abrí esta página desde su dirección publicada (GitHub) antes de imprimir; si no, los QR no se van a poder leer desde otros equipos.';
+    if(!$('sheet').children.length){$('d2').value=CONFIG.COLGANTES;armar()}}}
+
+/* ---- escaneo de colgantes en recepción ---- */
+function leerScan(txt){
+  const t=String(txt).trim(),m=t.match(/#b=(\d{1,3})/)||t.match(/^(\d{1,3})$/);
+  $('scanin').value='';
+  if(!m){$('scmsg').textContent='No reconocí ese código.';return}
+  const n=+m[1];
+  if(n<1||n>CONFIG.COLGANTES){$('scmsg').textContent='El colgante '+n+' no existe.';return}
+  tab(1);pick(n);
+  if(col['c'+num(n)]){$('scmsg').textContent='Colgante '+num(n)+' en uso: podés registrar la salida.';$('det').scrollIntoView({behavior:'smooth',block:'nearest'})}
+  else{$('scmsg').textContent='Colgante '+num(n)+' libre: cargá los datos de la visita.';$('colsel').value=num(n);$('nombre').focus()}}
+let stream=null,scanning=false;
+async function camara(){
+  $('scanmodal').classList.remove('hide');$('scanmsg').textContent='Apuntá al QR del colgante';
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=$('vid');v.srcObject=stream;await v.play();scanning=true;leerCam()}
+  catch(e){$('scanmsg').textContent='No se pudo abrir la cámara (requiere HTTPS y permiso).'}}
+function leerCam(){
+  if(!scanning)return;const v=$('vid');
+  if(v.readyState===4&&window.jsQR){
+    const w=Math.min(640,v.videoWidth),h=Math.round(v.videoHeight*w/v.videoWidth),c=$('cv'),x=c.getContext('2d',{willReadFrequently:true});
+    c.width=w;c.height=h;x.drawImage(v,0,0,w,h);
+    const r=jsQR(x.getImageData(0,0,w,h).data,w,h);
+    if(r&&r.data){cerrarCam();leerScan(r.data);return}}
+  setTimeout(leerCam,150)}
+function cerrarCam(){scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('scanmodal').classList.add('hide')}
 
 /* ---- inicio ---- */
 function iniciarPanel(){
