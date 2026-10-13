@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control de Visitas · Depósito</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--tx:#14213d;--mut:#6b7280;--br:#e3e7ef;--ac:#f59e0b;--ac2:#1d3557;--ok:#16a34a;--bad:#dc2626;--in:#f8fafc}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1420;--card:#16202f;--tx:#eef2f8;--mut:#9aa7ba;--br:#26344a;--ac2:#274a78;--in:#0f1826}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{background:linear-gradient(135deg,var(--ac2),#0b1b33);color:#fff;padding:24px 20px 56px}
+.wrap{max-width:1040px;margin:0 auto}
+header h1{margin:0;font-size:1.5rem}
+header p{margin:6px 0 0;opacity:.8;font-size:.9rem}
+.tabs{max-width:1040px;margin:-34px auto 14px;padding:0 16px;display:flex;gap:8px}
+.tabs button{background:var(--card);color:var(--tx);border:1px solid var(--br);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.tabs button.on{background:var(--ac);color:#1b1300;border-color:var(--ac)}
+.grid2{max-width:1040px;margin:0 auto 40px;padding:0 16px;display:grid;grid-template-columns:1fr 1.1fr;gap:18px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--br);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.07);margin-bottom:18px}
+.card h2{margin:0 0 12px;font-size:1.05rem}
+label{display:block;font-size:.8rem;font-weight:600;color:var(--mut);margin:12px 0 4px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--br);border-radius:10px;background:var(--in);color:var(--tx);font:inherit}
+input:focus,select:focus{outline:2px solid var(--ac)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{cursor:pointer;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;background:var(--in);color:var(--tx);border:1px solid var(--br)}
+.pri{background:var(--ac);color:#1b1300;border-color:var(--ac);width:100%;margin-top:16px;font-size:1rem}
+.err{color:var(--bad);font-size:.85rem;margin-top:8px;min-height:1em}
+.hide{display:none!important}
+.small{font-size:.8rem;color:var(--mut)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.cg{border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;border:2px solid var(--br);background:var(--in);min-height:62px}
+.cg b{display:block;font-size:1.25rem}
+.cg span{display:block;font-size:.68rem;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg.occ{background:#fef3c7;border-color:var(--ac);color:#4a3200}
+.cg.occ span{color:#7a5200}
+.cg.sel{outline:3px solid var(--ac2)}
+.big{text-align:center;padding:10px 0}
+.big .num{font-size:4.2rem;font-weight:900;line-height:1;color:var(--ac)}
+.det dl,.sc dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:10px 0;font-size:.9rem}
+dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
+.status{padding:4px 12px;border-radius:99px;font-weight:800;font-size:.8rem;display:inline-block}
+.status.ok{background:var(--ok);color:#fff}.status.bad{background:var(--bad);color:#fff}.status.free{background:var(--mut);color:#fff}
+.gate{max-width:340px;margin:60px auto;padding:0 16px}
+/* escaneo */
+#scan{max-width:420px;margin:-34px auto 40px;padding:0 16px}
+.sc{border-radius:18px;overflow:hidden;border:1px solid var(--br);background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.sc .top{background:linear-gradient(135deg,var(--ac2),#0b1b33);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+.sc .body{padding:22px 18px;text-align:center}
+.sc h3{margin:12px 0 0;font-size:1.5rem}
+.stripe{height:8px;background:repeating-linear-gradient(45deg,var(--ac) 0 12px,#1b1b1b 12px 24px)}
+/* etiquetas */
+#sheet{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.lbl{width:100mm;height:100mm;padding:4mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#fff;color:#000;border:1px solid #000;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+.lbl .t{background:#000;color:#fff;width:100%;text-align:center;font-weight:900;font-size:7mm;letter-spacing:.3em;padding:2mm 0}
+.lbl .q{width:54mm;height:54mm}
+.lbl .q img,.lbl .q canvas{width:100%!important;height:100%!important;image-rendering:pixelated;display:block}
+.lbl .n{font-size:14mm;font-weight:900;line-height:1}
+.lbl .s{font-size:3.2mm;font-weight:700}
+@media print{
+ @page{size:100mm 100mm;margin:0}
+ html,body{background:#fff!important;margin:0;padding:0}
+ .np{display:none!important}
+ #sheet{display:block;gap:0}
+ .lbl{border:0;break-after:page;page-break-after:always}
+ .lbl:last-child{break-after:auto;page-break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="np"><div class="wrap">
+<h1>🏭 Control de Visitas · Depósito</h1>
+<p id="modo"></p>
+</div></header>
+
+<!-- Pantalla al escanear un colgante -->
+<div id="scan" class="hide np"></div>
+
+<!-- Clave de recepción -->
+<div id="gate" class="gate hide np"><div class="card">
+<h2>Acceso de recepción</h2><input id="pin" type="password" placeholder="PIN" inputmode="numeric">
+<button class="pri" onclick="checkPin()">Entrar</button><div class="err" id="pinerr"></div></div></div>
+
+<div id="panel" class="hide">
+<div class="tabs np">
+  <button id="b1" class="on" onclick="tab(1)">Recepción</button>
+  <button id="b2" onclick="tab(2)">Imprimir colgantes</button>
+</div>
+
+<!-- RECEPCIÓN -->
+<div id="t1" class="grid2 np">
+  <div>
+    <div class="card">
+      <h2>Registrar ingreso</h2>
+      <label>Nombre y apellido *</label><input id="nombre" autocomplete="off" placeholder="Ej: Juan Pérez">
+      <div class="row">
+        <div><label>DNI *</label><input id="dni" inputmode="numeric" placeholder="30123456"></div>
+        <div><label>Teléfono</label><input id="tel" inputmode="tel"></div>
+      </div>
+      <label>Empresa</label><input id="emp" placeholder="Empresa / Proveedor">
+      <div class="row">
+        <div><label>Motivo *</label><select id="mot"><option>Entrega de mercadería</option><option>Retiro de mercadería</option><option>Proveedor</option><option>Mantenimiento</option><option>Auditoría / Inspección</option><option>Reunión</option><option>Otro</option></select></div>
+        <div><label>Patente</label><input id="pat" placeholder="AB123CD" style="text-transform:uppercase"></div>
+      </div>
+      <label>Visita a / Responsable *</label><input id="resp" placeholder="Persona o sector">
+      <div class="row">
+        <div><label>Válido por</label><select id="hs"><option value="1">1 hora</option><option value="2">2 horas</option><option value="4" selected>4 horas</option><option value="8">8 horas</option><option value="12">12 horas</option></select></div>
+        <div><label>Colgante a entregar</label><select id="colsel"></select></div>
+      </div>
+      <div class="err" id="err"></div>
+      <button class="pri" onclick="guardar()">Registrar y asignar colgante</button>
+    </div>
+    <div class="card hide" id="res"></div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>Colgantes <span class="small" id="cnt"></span></h2>
+      <div class="badges" id="grid"></div>
+      <p class="small">Amarillo = en uso. Tocá un colgante en uso para ver los datos o registrar la salida.</p>
+    </div>
+    <div class="card det hide" id="det"></div>
+    <button onclick="csv()">⬇ Descargar visitas de hoy (CSV)</button>
+  </div>
+</div>
+
+<!-- IMPRESIÓN -->
+<div id="t2" class="hide">
+  <div style="max-width:1040px;margin:0 auto 20px;padding:0 16px" class="np">
+    <div class="card">
+      <h2>Colgantes fijos para Zebra ZD421 · etiqueta 100×100 mm</h2>
+      <div class="row" style="max-width:360px">
+        <div><label>Desde N°</label><input id="d1" type="number" min="1" value="1"></div>
+        <div><label>Hasta N°</label><input id="d2" type="number" min="1"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <button onclick="armar()">Vista previa</button>
+        <button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+      <p class="small" style="margin-top:12px">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b>100 × 100 mm</b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
+    </div>
+  </div>
+  <div id="sheet"></div>
+</div>
+</div>
+
+<script>
+/* ===== CONFIGURACIÓN ===== */
+const CONFIG={
+  COLGANTES:30,          // cantidad de colgantes
+  FIREBASE_URL:'',       // ej: 'https://mi-deposito-default-rtdb.firebaseio.com'  (vacío = solo este equipo)
+  PIN:'',                // PIN opcional para abrir la pantalla de recepción
+};
+/* ========================= */
+const $=id=>document.getElementById(id);
+const FB=CONFIG.FIREBASE_URL.replace(/\/+$/,'');
+const pad=n=>String(n).padStart(2,'0');
+const num=i=>pad(i);
+const fh=t=>{const d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const base=()=>location.href.split('#')[0];
+const mask=d=>{const x=String(d||'').replace(/\D/g,'');return x?'•••'+x.slice(-3):'—'};
+
+/* ---- almacenamiento: Firebase (compartido) o localStorage (este equipo) ---- */
+const LSK='visitasdb_v2';
+const lsRead=()=>{try{return JSON.parse(localStorage.getItem(LSK))||{}}catch(e){return{}}};
+const lsWrite=o=>{try{localStorage.setItem(LSK,JSON.stringify(o))}catch(e){}};
+async function dbGet(p){
+  if(FB){const r=await fetch(`${FB}/${p}.json`);if(!r.ok)throw new Error('db');return r.json()}
+  let o=lsRead();for(const k of p.split('/')){o=o?o[k]:undefined}
+  return o===undefined?null:o}
+async function dbSet(p,val){
+  if(FB){const r=await fetch(`${FB}/${p}.json`,{method:val===null?'DELETE':'PUT',body:val===null?undefined:JSON.stringify(val)});if(!r.ok)throw new Error('db');return}
+  const root=lsRead(),ks=p.split('/');let o=root;
+  ks.slice(0,-1).forEach(k=>{o=o[k]=o[k]||{}});
+  if(val===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=val;
+  lsWrite(root)}
+async function dbPush(p,val){
+  if(FB){await fetch(`${FB}/${p}.json`,{method:'POST',body:JSON.stringify(val)});return}
+  await dbSet(p+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),val)}
+
+/* ---- pantalla que se ve al escanear el colgante ---- */
+async function vistaScan(n){
+  $('scan').classList.remove('hide');
+  let v=null,fail=false;
+  try{v=await dbGet('colgantes/c'+n)}catch(e){fail=true}
+  let h=`<div class="sc"><div class="top"><b style="letter-spacing:.1em">COLGANTE N° ${esc(n)}</b><span>🏭</span></div><div class="body">`;
+  if(fail)h+=`<span class="status bad">Sin conexión</span><p>No se pudo consultar la base de datos.</p>`;
+  else if(!v)h+=`<span class="status free">COLGANTE LIBRE</span><p class="small">Este colgante no tiene una visita asignada.</p>`+(FB?'':`<p class="small">⚠ Modo local: solo se ven datos en el equipo de recepción.</p>`);
+  else{
+    const hasta=v.t+v.h*3600000,venc=Date.now()>hasta;
+    h+=`<span class="status ${venc?'bad':'ok'}">${venc?'⛔ CREDENCIAL VENCIDA':'✔ VISITA AUTORIZADA'}</span>
+    <h3>${esc(v.n)}</h3><div class="small">${esc(v.e)||'Particular'}</div>
+    <dl><dt>DNI</dt><dd>${mask(v.d)}</dd><dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>
+    ${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(hasta)}</dd></dl>`;
+  }
+  $('scan').innerHTML=h+`</div><div class="stripe"></div></div>`;
+}
+
+/* ---- recepción ---- */
+let col={},selN=null;
+async function refresh(){
+  try{col=(await dbGet('colgantes'))||{};$('modo').textContent=FB?'🟢 Base de datos compartida conectada':'🟡 Modo local: los datos solo existen en este equipo'}
+  catch(e){$('modo').textContent='🔴 Sin conexión con la base de datos'}
+  renderGrid();fillSel()}
+function renderGrid(){
+  let occ=0,h='';
+  for(let i=1;i<=CONFIG.COLGANTES;i++){
+    const v=col['c'+num(i)];if(v)occ++;
+    h+=`<div class="cg ${v?'occ':''} ${selN===i?'sel':''}" onclick="pick(${i})"><b>${num(i)}</b><span>${v?esc(v.n):'libre'}</span></div>`}
+  $('grid').innerHTML=h;$('cnt').textContent=`· ${occ} en uso / ${CONFIG.COLGANTES - occ} libres`}
+function fillSel(){
+  const cur=$('colsel').value;let h='';
+  for(let i=1;i<=CONFIG.COLGANTES;i++)if(!col['c'+num(i)])h+=`<option value="${num(i)}">N° ${num(i)}</option>`;
+  $('colsel').innerHTML=h||'<option value="">Sin colgantes libres</option>';
+  if(cur&&!col['c'+cur])$('colsel').value=cur}
+function pick(i){
+  selN=i;renderGrid();const v=col['c'+num(i)],d=$('det');
+  if(!v){d.classList.add('hide');$('colsel').value=num(i);return}
+  d.classList.remove('hide');
+  d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${esc(v.e)}</span>
+  <dl><dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
+  <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>`}
+async function guardar(){
+  const g=id=>$(id).value.trim(),n=$('colsel').value;
+  if(!g('nombre')||!g('dni')||!g('resp')){$('err').textContent='Completá nombre, DNI y a quién visita.';return}
+  if(!n){$('err').textContent='No hay colgantes libres.';return}
+  $('err').textContent='';
+  try{
+    if(await dbGet('colgantes/c'+n)){$('err').textContent='Ese colgante ya fue asignado. Elegí otro.';await refresh();return}
+    const v={n:g('nombre'),d:g('dni'),tl:g('tel'),e:g('emp'),m:$('mot').value,p:g('pat').toUpperCase(),r:g('resp'),h:+$('hs').value,t:Date.now()};
+    await dbSet('colgantes/c'+n,v);
+    $('res').classList.remove('hide');
+    $('res').innerHTML=`<div class="big"><div class="small">ENTREGAR COLGANTE</div><div class="num">${n}</div><b>${esc(v.n)}</b><div class="small">Válido hasta ${fh(v.t+v.h*3600000)}</div></div>`;
+    ['nombre','dni','tel','emp','pat','resp'].forEach(i=>$(i).value='');
+    await refresh();$('nombre').focus();
+  }catch(e){$('err').textContent='No se pudo guardar. Revisá la conexión.'}}
+async function salida(i){
+  const v=col['c'+num(i)];if(!v)return;
+  try{await dbPush('historial',{...v,c:num(i),s:Date.now()});await dbSet('colgantes/c'+num(i),null);
+    $('det').classList.add('hide');selN=null;await refresh()}
+  catch(e){alert('No se pudo registrar la salida.')}}
+async function csv(){
+  try{
+    const h=(await dbGet('historial'))||{},hoy=new Date().toDateString();
+    const rows=Object.values(h).filter(v=>new Date(v.t).toDateString()===hoy);
+    // incluye los que siguen adentro
+    Object.entries(col).forEach(([k,v])=>{if(new Date(v.t).toDateString()===hoy)rows.push({...v,c:k.slice(1),s:''})});
+    rows.sort((a,b)=>a.t-b.t);
+    const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+    const out=['Colgante,Nombre,DNI,Telefono,Empresa,Motivo,Visita a,Patente,Ingreso,Salida']
+      .concat(rows.map(v=>[v.c,v.n,v.d,v.tl,v.e,v.m,v.r,v.p,fh(v.t),v.s?fh(v.s):'ADENTRO'].map(q).join(','))).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out],{type:'text/csv'}));
+    a.download='visitas-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  }catch(e){alert('No se pudo generar el CSV.')}}
+
+/* ---- impresión de colgantes fijos ---- */
+function armar(){
+  let a=Math.max(1,+$('d1').value||1),b=Math.min(999,+$('d2').value||CONFIG.COLGANTES);
+  if(b<a)b=a;const s=$('sheet');s.innerHTML='';
+  for(let i=a;i<=b;i++){
+    const d=document.createElement('div');d.className='lbl';
+    d.innerHTML=`<div class="t">VISITA</div><div class="q"></div><div class="n">N° ${num(i)}</div><div class="s">ESCANEAR PARA VER DATOS · DEVOLVER EN RECEPCIÓN</div>`;
+    s.appendChild(d);
+    try{new QRCode(d.querySelector('.q'),{text:base()+'#b='+num(i),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}}
+function tab(n){
+  $('t1').classList.toggle('hide',n!==1);$('t2').classList.toggle('hide',n!==2);
+  $('b1').classList.toggle('on',n===1);$('b2').classList.toggle('on',n===2);
+  if(n===2&&!$('sheet').children.length){$('d2').value=CONFIG.COLGANTES;armar()}}
+
+/* ---- inicio ---- */
+function iniciarPanel(){
+  $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;
+  refresh();setInterval(refresh,15000)}
+function checkPin(){
+  if($('pin').value===CONFIG.PIN){try{sessionStorage.setItem('pin','1')}catch(e){}$('gate').classList.add('hide');iniciarPanel()}
+  else $('pinerr').textContent='PIN incorrecto'}
+addEventListener('hashchange',()=>location.reload());
+(function(){
+  const m=location.hash.match(/^#b=(\d{1,3})$/);
+  if(m){$('modo').textContent='Consulta de colgante';vistaScan(pad(+m[1]));return}
+  let ok=!CONFIG.PIN;try{ok=ok||sessionStorage.getItem('pin')==='1'}catch(e){}
+  if(ok)iniciarPanel();else $('gate').classList.remove('hide');
+})();
+</script>
+</body>
+</html>
