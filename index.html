@@ -59,7 +59,18 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .lbl .q img,.lbl .q canvas{width:100%!important;height:100%!important;image-rendering:pixelated;display:block}
 .lbl .n{font-size:14mm;font-weight:900;line-height:1}
 .lbl .s{font-size:3.2mm;font-weight:700}
+.lbl{text-align:center}
+.lbl .cl{font-size:6mm;font-weight:800;line-height:1.1;max-height:17mm;overflow:hidden;width:100%}
+.lbl .mid{display:flex;gap:4mm;align-items:center;justify-content:center;width:100%}
+.lbl .mid .q{width:42mm;height:42mm;flex:none}
+.lbl .cel{flex:1;min-width:0}
+.lbl .cel small{display:block;font-size:4mm;font-weight:700;letter-spacing:.15em}
+.lbl .cel b{font-size:19mm;line-height:1;font-weight:900}
+.lbl .pn{font-weight:900;font-size:4.6mm}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow:auto}
 @media print{
+ #lblmodal:not(.hide){position:static;background:none;padding:0;display:block!important}
+ body.lbl-open #t2{display:none!important}
  @page{size:100mm 100mm;margin:0}
  html,body{background:#fff!important;margin:0;padding:0}
  .np{display:none!important}
@@ -146,6 +157,11 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 </div>
 </div>
 
+<div id="lblmodal" class="modal hide">
+  <div id="lblArea"></div>
+  <div class="np" style="display:flex;gap:10px"><button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir etiqueta</button><button onclick="cerrarEt()">Cerrar</button></div>
+</div>
+
 <script>
 /* ===== CONFIGURACIÓN ===== */
 const CONFIG={
@@ -155,7 +171,9 @@ const CONFIG={
 };
 /* ========================= */
 const $=id=>document.getElementById(id);
-const FB=CONFIG.FIREBASE_URL.replace(/\/+$/,'');
+const FB=CONFIG.FIREBASE_URL.trim().replace(/\.json.*$/,'').replace(/\/+$/,'');
+const b64e=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d=s=>JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/')))));
 const pad=n=>String(n).padStart(2,'0');
 const num=i=>pad(i);
 const fh=t=>{const d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
@@ -182,6 +200,19 @@ async function dbPush(p,val){
   await dbSet(p+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),val)}
 
 /* ---- pantalla que se ve al escanear el colgante ---- */
+/* El QR de la etiqueta de cada visita lleva los datos adentro: se lee en cualquier celular sin base de datos */
+async function vistaSnap(txt){
+  $('scan').classList.remove('hide');
+  let s;try{s=b64d(txt)}catch(e){$('scan').innerHTML='<div class="sc"><div class="body"><span class="status bad">QR NO VÁLIDO</span><p class="small">Consultá en recepción.</p></div></div>';return}
+  let v={n:s.n,d:s.k,e:s.e,m:s.m,r:s.r,p:s.p,h:s.h,t:s.t},fin=false,live=false;
+  if(FB&&s.c){try{const r=await dbGet('colgantes/c'+s.c);live=true;if(!r||r.t!==s.t)fin=true;else v=r}catch(e){live=false}}
+  const hasta=v.t+v.h*3600000,venc=Date.now()>hasta;
+  const st=fin?'<span class="status free">VISITA FINALIZADA</span>':`<span class="status ${venc?'bad':'ok'}">${venc?'⛔ CREDENCIAL VENCIDA':'✔ VISITA AUTORIZADA'}</span>`;
+  $('scan').innerHTML=`<div class="sc"><div class="top"><b style="letter-spacing:.1em">${s.c?'COLGANTE N° '+esc(s.c):'VISITA'}</b><span>🏭</span></div><div class="body">${st}
+  <h3>${esc(v.n)}</h3><div class="small">${esc(v.e)||'Particular'}</div>
+  <dl><dt>DNI</dt><dd>${mask(v.d)}</dd><dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>
+  ${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(hasta)}</dd></dl>
+  ${live?'':`<p class="small">Datos al momento del ingreso.</p>`}</div><div class="stripe"></div></div>`}
 async function vistaScan(n){
   $('scan').classList.remove('hide');
   let v=null,fail=false;
@@ -202,7 +233,7 @@ async function vistaScan(n){
 /* ---- recepción ---- */
 let col={},selN=null;
 async function refresh(){
-  try{col=(await dbGet('colgantes'))||{};$('modo').textContent=FB?'🟢 Base de datos compartida conectada':'🟡 Modo local: los datos solo existen en este equipo'}
+  try{col=(await dbGet('colgantes'))||{};$('modo').textContent=FB?'🟢 Base de datos compartida conectada':'💻 Datos guardados en este equipo · la etiqueta QR de cada visita se lee desde cualquier celular'}
   catch(e){$('modo').textContent='🔴 Sin conexión con la base de datos'}
   renderGrid();fillSel()}
 function renderGrid(){
@@ -222,7 +253,20 @@ function pick(i){
   d.classList.remove('hide');
   d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${esc(v.e)}</span>
   <dl><dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
-  <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>`}
+  <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>
+  <button style="width:100%;margin-top:8px" onclick="reimp(${i})">🖨 Imprimir etiqueta de esta visita</button>`}
+const reimp=i=>{const v=col['c'+num(i)];if(v)etiquetaVisita(num(i),v)};
+function etiquetaVisita(n,v){
+  const k=String(v.d||'').replace(/\D/g,'').slice(-3);
+  $('lblArea').innerHTML=`<div class="lbl"><div class="t">VISITA</div>
+  <div class="cl">${esc(v.n)}${v.e?`<div style="font-size:4.2mm;font-weight:700">${esc(v.e)}</div>`:''}</div>
+  <div class="mid"><div class="q"></div><div class="cel"><small>COLGANTE</small><b>${esc(n)}</b></div></div>
+  <div class="pn">VÁLIDO HASTA ${fh(v.t+v.h*3600000)}</div>
+  <div class="s">${esc(v.m).toUpperCase()} · VISITA A: ${esc(v.r).toUpperCase()}</div></div>`;
+  const data={n:v.n,e:v.e,m:v.m,r:v.r,p:v.p,h:v.h,t:v.t,c:n,k};
+  try{new QRCode($('lblArea').querySelector('.q'),{text:base()+'#d='+b64e(data),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}
+  $('lblmodal').classList.remove('hide');document.body.classList.add('lbl-open')}
+function cerrarEt(){$('lblmodal').classList.add('hide');document.body.classList.remove('lbl-open')}
 async function guardar(){
   const g=id=>$(id).value.trim(),n=$('colsel').value;
   if(!g('nombre')||!g('dni')||!g('resp')){$('err').textContent='Completá nombre, DNI y a quién visita.';return}
@@ -235,7 +279,7 @@ async function guardar(){
     $('res').classList.remove('hide');
     $('res').innerHTML=`<div class="big"><div class="small">ENTREGAR COLGANTE</div><div class="num">${n}</div><b>${esc(v.n)}</b><div class="small">Válido hasta ${fh(v.t+v.h*3600000)}</div></div>`;
     ['nombre','dni','tel','emp','pat','resp'].forEach(i=>$(i).value='');
-    await refresh();$('nombre').focus();
+    await refresh();etiquetaVisita(n,v);
   }catch(e){$('err').textContent='No se pudo guardar. Revisá la conexión.'}}
 async function salida(i){
   const v=col['c'+num(i)];if(!v)return;
@@ -272,13 +316,15 @@ function tab(n){
 
 /* ---- inicio ---- */
 function iniciarPanel(){
-  $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;
+  $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;$('b2').classList.toggle('hide',!FB);
   refresh();setInterval(refresh,15000)}
 function checkPin(){
   if($('pin').value===CONFIG.PIN){try{sessionStorage.setItem('pin','1')}catch(e){}$('gate').classList.add('hide');iniciarPanel()}
   else $('pinerr').textContent='PIN incorrecto'}
 addEventListener('hashchange',()=>location.reload());
 (function(){
+  const dd=location.hash.match(/^#d=(.+)$/);
+  if(dd){$('modo').textContent='Consulta de visita';vistaSnap(dd[1]);return}
   const m=location.hash.match(/^#b=(\d{1,3})$/);
   if(m){$('modo').textContent='Consulta de colgante';vistaScan(pad(+m[1]));return}
   let ok=!CONFIG.PIN;try{ok=ok||sessionStorage.getItem('pin')==='1'}catch(e){}
