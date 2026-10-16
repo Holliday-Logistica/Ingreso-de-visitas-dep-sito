@@ -77,12 +77,16 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .fx small{display:block;font-size:2.8mm;font-weight:700;letter-spacing:.1em}
 .fx .n{font-size:15mm;font-weight:900;line-height:1}
 .fx .s{font-size:2.5mm;font-weight:700;line-height:1.2}
+#sheet.a4{display:grid;grid-template-columns:repeat(2,var(--lw,90mm));gap:3mm;justify-content:center}
+#sheet.a4 .fx{break-inside:avoid}
 @media print{
  html,body{background:#fff!important;margin:0;padding:0}
  .np{display:none!important}
  #sheet{display:block;gap:0}
  .fx{border:0;break-after:page;page-break-after:always}
  .fx:last-child{break-after:auto;page-break-after:auto}
+ #sheet.a4{display:grid}
+ #sheet.a4 .fx{break-after:auto;page-break-after:auto}
 }
 </style>
 </head>
@@ -105,6 +109,7 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <div class="tabs np">
   <button id="b1" class="on" onclick="tab(1)">Recepción</button>
   <button id="b2" onclick="tab(2)">Imprimir colgantes</button>
+  <button id="b3" onclick="tab(3)">🔔 Avisos</button>
 </div>
 
 <!-- RECEPCIÓN -->
@@ -147,6 +152,49 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
   </div>
 </div>
 
+<!-- AVISOS -->
+<div id="t3" class="hide np"><div style="max-width:1040px;margin:0 auto 40px;padding:0 16px">
+  <div class="card">
+    <h2>🔔 Chequeo automático de visitas en depósito</h2>
+    <p class="small">Cada cierto tiempo se revisa quién sigue registrado y se envía la lista a los mails y WhatsApp cargados abajo, para detectar a quien olvidó dar la salida. <b>Funciona mientras la pantalla de Recepción esté abierta en algún equipo</b> (si hay varias abiertas, se envía una sola vez). Si no hay nadie adentro, no se manda nada.</p>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="avon" style="width:auto" onchange="avCfg()"> Aviso automático activado</label>
+    <div class="row">
+      <div><label>Repetir cada</label><select id="avhs" onchange="avCfg()"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option><option value="4">4 horas</option></select></div>
+      <div><label>Desde las (hs)</label><input id="avd" type="number" min="0" max="23" onchange="avCfg()"></div>
+      <div><label>Hasta las (hs)</label><input id="avh" type="number" min="1" max="24" onchange="avCfg()"></div>
+    </div>
+    <div class="small" id="avest" style="margin-top:10px"></div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="pri" style="width:auto;margin:0" onclick="avAhora()">📤 Enviar chequeo ahora (prueba)</button></div>
+    <div id="avlinks" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <h2>✉ Mails que reciben el aviso</h2>
+    <div id="avem"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><input id="avemn" type="email" placeholder="nombre@empresa.com" onkeydown="if(event.key==='Enter')avAddEm()"><button class="pri" style="width:auto;margin:0" onclick="avAddEm()">Agregar</button></div>
+  </div>
+  <div class="card">
+    <h2>📲 WhatsApp que reciben el aviso</h2>
+    <div id="avwa"></div>
+    <div class="row" style="margin-top:8px">
+      <div><label>Nombre</label><input id="avwn" placeholder="Ej: Juan"></div>
+      <div><label>Número con código de país</label><input id="avwt" inputmode="tel" placeholder="5491122334455"></div>
+      <div><label>Clave CallMeBot</label><input id="avwk" placeholder="opcional"></div>
+    </div>
+    <button style="margin-top:10px" onclick="avAddWa()">Agregar número</button>
+    <p class="small" style="margin-top:10px">WhatsApp no permite que una página envíe mensajes sola. Para que llegue <b>automático</b>, cada persona activa una sola vez el servicio gratuito <b>CallMeBot</b>: desde su WhatsApp le escribe <i>I allow callmebot to send me messages</i> al <b>+34 644 51 95 23</b> y recibe una clave, que se carga acá. Los números <b>sin clave</b> no reciben automático: al tocar “Enviar chequeo ahora” aparece un botón para abrirles el mensaje ya escrito.</p>
+  </div>
+  <div class="card">
+    <h2>⚙ Datos de EmailJS (para los mails)</h2>
+    <div class="row">
+      <div><label>Service ID</label><input id="ejs"></div>
+      <div><label>Template ID</label><input id="ejt"></div>
+      <div><label>Public Key</label><input id="ejk"></div>
+    </div>
+    <button style="margin-top:10px" onclick="avSaveEj()">Guardar datos de EmailJS</button>
+    <p class="small" style="margin-top:10px">En EmailJS la plantilla debe tener el campo <b>To Email</b> = <code>{{to_email}}</code>, el <b>Subject</b> = <code>{{subject}}</code> y en el cuerpo <code>{{message}}</code>. Se manda un solo mail con todos los destinatarios. Podés usar los mismos datos que en la página de Retiro de Pedidos.</p>
+  </div>
+</div></div>
+
 <!-- IMPRESIÓN -->
 <div id="t2" class="hide">
   <div style="max-width:1040px;margin:0 auto 20px;padding:0 16px" class="np">
@@ -156,14 +204,17 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
         <div><label>Desde N°</label><input id="d1" type="number" min="1" value="1"></div>
         <div><label>Hasta N°</label><input id="d2" type="number" min="1"></div>
       </div>
+      <label>Formato de impresión</label>
+      <select id="pmode" onchange="pmode()" style="max-width:420px"><option value="a4">Hoja A4 · varias por hoja (para recortar y plastificar)</option><option value="zebra">Etiqueta Zebra · una por etiqueta</option></select>
       <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
         <button onclick="armar()">Vista previa</button>
         <button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir</button>
       </div>
-      <p class="small" style="margin-top:12px">Los QR apuntan a: <b id="burl"></b></p><div class="err" id="urlwarn"></div><p class="small">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b class="tam"></b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
+      <p class="small" style="margin-top:12px">Los QR apuntan a: <b id="burl"></b></p><div class="err" id="urlwarn"></div><p class="small" id="pa4">Cada credencial mide <b class="tam"></b> (9 × 5 cm) y entran <b>10 por hoja A4</b> (2 × 5), con una separación entre ellas para recortar. En el cuadro de impresión: papel <b>A4</b>, márgenes <b>Ninguno o Predeterminados</b>, escala <b>100%</b> (no “Ajustar a página”), sin encabezados ni pies.</p>
+      <p class="small hide" id="pzeb">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b class="tam"></b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
     </div>
   </div>
-  <div id="sheet"></div>
+  <div id="sheet" class="a4"></div>
 </div>
 </div>
 
@@ -193,9 +244,12 @@ const num=i=>pad(i);
 const fh=t=>{const d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const base=()=>CONFIG.BASE_URL||location.href.split('#')[0];
-(function(){const st=document.createElement('style');
-  st.textContent=`:root{--lw:${CONFIG.ETIQ_W}mm;--lh:${CONFIG.ETIQ_H}mm}@media print{@page{size:${CONFIG.ETIQ_W}mm ${CONFIG.ETIQ_H}mm;margin:0}}`;
-  document.head.appendChild(st)})();
+const PST=document.createElement('style');document.head.appendChild(PST);
+function applyPage(a4){
+  PST.textContent=`:root{--lw:${CONFIG.ETIQ_W}mm;--lh:${CONFIG.ETIQ_H}mm}`+(a4
+    ?`@media print{@page{size:A4;margin:8mm}}`
+    :`@media print{@page{size:${CONFIG.ETIQ_W}mm ${CONFIG.ETIQ_H}mm;margin:0}}`)}
+applyPage(true);
 const mask=d=>{const x=String(d||'').replace(/\D/g,'');return x?'•••'+x.slice(-3):'—'};
 
 /* ---- almacenamiento: Firebase (compartido) o localStorage (este equipo) ---- */
@@ -305,6 +359,7 @@ async function csv(){
   }catch(e){alert('No se pudo generar el CSV.')}}
 
 /* ---- impresión de colgantes fijos ---- */
+function pmode(){const a=$('pmode').value==='a4';$('sheet').classList.toggle('a4',a);applyPage(a);$('pa4').classList.toggle('hide',!a);$('pzeb').classList.toggle('hide',a)}
 function armar(){
   let a=Math.max(1,+$('d1').value||1),b=Math.min(999,+$('d2').value||CONFIG.COLGANTES);
   if(b<a)b=a;const s=$('sheet');s.innerHTML='';
@@ -314,8 +369,9 @@ function armar(){
     s.appendChild(d);
     try{new QRCode(d.querySelector('.q'),{text:base()+'#b='+num(i),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}}
 function tab(n){
-  $('t1').classList.toggle('hide',n!==1);$('t2').classList.toggle('hide',n!==2);
-  $('b1').classList.toggle('on',n===1);$('b2').classList.toggle('on',n===2);
+  $('t1').classList.toggle('hide',n!==1);$('t2').classList.toggle('hide',n!==2);$('t3').classList.toggle('hide',n!==3);
+  $('b1').classList.toggle('on',n===1);$('b2').classList.toggle('on',n===2);$('b3').classList.toggle('on',n===3);
+  if(n===3)avRender();
   if(n===2){
     document.querySelectorAll('.tam').forEach(e=>e.textContent=CONFIG.ETIQ_W+' × '+CONFIG.ETIQ_H+' mm');
     $('burl').textContent=base();
@@ -348,10 +404,105 @@ function leerCam(){
   setTimeout(leerCam,150)}
 function cerrarCam(){scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('scanmodal').classList.add('hide')}
 
+
+/* ---- AVISOS PROGRAMADOS: chequeo de quién sigue en depósito ---- */
+let AV={on:false,hs:2,d:7,h:20,em:[],wa:[],ej:{s:'',t:'',k:''},ult:0,res:''};
+const arr=x=>Array.isArray(x)?x.filter(Boolean):(x&&typeof x==='object'?Object.values(x).filter(Boolean):[]);
+function avNorm(x){x=x||{};return{on:!!x.on,hs:+x.hs||2,d:x.d==null?7:+x.d,h:x.h==null?20:+x.h,em:arr(x.em),wa:arr(x.wa),ej:{s:'',t:'',k:'',...(x.ej||{})},ult:+x.ult||0,res:x.res||''}}
+async function avLoad(){try{AV=avNorm(await dbGet('config/avisos'))}catch(e){}}
+const avSet=(k,v)=>dbSet('config/avisos/'+k,v);
+function avRender(){
+  if(!$('avon'))return;
+  $('avon').checked=AV.on;$('avhs').value=String(AV.hs);$('avd').value=AV.d;$('avh').value=AV.h;
+  $('ejs').value=AV.ej.s||'';$('ejt').value=AV.ej.t||'';$('ejk').value=AV.ej.k||'';
+  const btn=(f,i)=>`<button style="width:auto;margin:0;padding:4px 10px" onclick="${f}(${i})" title="Quitar">✕</button>`;
+  $('avem').innerHTML=AV.em.length?AV.em.map((m,i)=>`<div class="sr" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(m)}</span>${btn('avDelEm',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún mail.</div>';
+  $('avwa').innerHTML=AV.wa.length?AV.wa.map((w,i)=>`<div class="sr" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span><b>${esc(w.n||'—')}</b> · ${esc(w.t)} <span class="small">${w.k?'· ✔ automático':'· solo manual (sin clave)'}</span></span>${btn('avDelWa',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún número.</div>';
+  avEstado()}
+function avEstado(){
+  if(!$('avest'))return;
+  const prox=AV.ult?new Date(AV.ult+AV.hs*3600000):null;
+  $('avest').innerHTML=(AV.on?`🟢 Activo · de ${AV.d} a ${AV.h} hs · cada ${AV.hs} h`:'⚪ Desactivado')
+    +(AV.ult?`<br>Último chequeo: <b>${fh(AV.ult)}</b>${AV.res?' · '+esc(AV.res):''}`:'')
+    +(AV.on&&prox?`<br>Próximo: a partir de las <b>${pad(prox.getHours())}:${pad(prox.getMinutes())}</b>`:'')}
+async function avCfg(){
+  AV.on=$('avon').checked;AV.hs=+$('avhs').value||2;
+  AV.d=Math.min(23,Math.max(0,+$('avd').value||0));AV.h=Math.min(24,Math.max(AV.d+1,+$('avh').value||20));
+  $('avd').value=AV.d;$('avh').value=AV.h;
+  try{await avSet('on',AV.on);await avSet('hs',AV.hs);await avSet('d',AV.d);await avSet('h',AV.h)}catch(e){alert('No se pudo guardar la configuración.')}
+  avEstado()}
+async function avSaveEj(){
+  AV.ej={s:$('ejs').value.trim(),t:$('ejt').value.trim(),k:$('ejk').value.trim()};
+  try{await avSet('ej',AV.ej);alert('Datos de EmailJS guardados.')}catch(e){alert('No se pudo guardar.')}}
+async function avAddEm(){
+  const v=$('avemn').value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){alert('Ese mail no parece válido.');return}
+  if(AV.em.includes(v)){$('avemn').value='';return}
+  AV.em.push(v);$('avemn').value='';
+  try{await avSet('em',AV.em)}catch(e){alert('No se pudo guardar.')}avRender()}
+async function avDelEm(i){AV.em.splice(i,1);try{await avSet('em',AV.em.length?AV.em:null)}catch(e){}avRender()}
+async function avAddWa(){
+  const t=$('avwt').value.replace(/\D/g,''),n=$('avwn').value.trim(),k=$('avwk').value.trim();
+  if(t.length<11){alert('Poné el número completo con código de país y sin 0 ni 15. Ej: 5491122334455');return}
+  if(AV.wa.some(w=>w.t===t))return;
+  AV.wa.push({n,t,k});['avwn','avwt','avwk'].forEach(i=>$(i).value='');
+  try{await avSet('wa',AV.wa)}catch(e){alert('No se pudo guardar.')}avRender()}
+async function avDelWa(i){AV.wa.splice(i,1);try{await avSet('wa',AV.wa.length?AV.wa:null)}catch(e){}avRender()}
+
+const durTxt=ms=>{const m=Math.max(0,Math.round(ms/60000)),h=Math.floor(m/60);return h?`${h} h ${m%60} min`:`${m} min`};
+function avMensaje(c,now){
+  const L=Object.entries(c||{}).map(([k,v])=>({c:k.slice(1),...v})).sort((a,b)=>a.t-b.t);
+  const hh=pad(new Date(now).getHours())+':'+pad(new Date(now).getMinutes());
+  if(!L.length)return{n:0,txt:`🏭 Chequeo de visitas ${hh}\nNo hay visitas registradas en depósito.`};
+  const lines=L.map(v=>`• Colgante ${v.c} · ${v.n}${v.e?' ('+v.e+')':''} · visita a ${v.r} · ingresó ${fh(v.t).slice(11)} (${durTxt(now-v.t)})${now>v.t+v.h*3600000?' ⚠ VENCIDA':''}`);
+  return{n:L.length,txt:`🏭 Chequeo de visitas ${hh}\nHay ${L.length} ${L.length===1?'persona registrada':'personas registradas'} en depósito:\n\n${lines.join('\n')}\n\nSi alguien ya se fue, registrá su salida en recepción.`}}
+async function avEnviar(manual){
+  const now=Date.now(),c=(await dbGet('colgantes'))||{},m=avMensaje(c,now),res=[];
+  if(!m.n&&!manual)return'sin visitas adentro';
+  const txt=m.txt;
+  // mails
+  if(AV.em.length){
+    const E=AV.ej||{};
+    if(!(E.s&&E.t&&E.k))res.push('mail: faltan datos de EmailJS');
+    else try{
+      const x=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({service_id:E.s,template_id:E.t,user_id:E.k,template_params:{to_email:AV.em.join(','),to_name:'Equipo',subject:`Chequeo de visitas en depósito (${m.n})`,message:txt}})});
+      res.push(x.ok?`mail ✔ (${AV.em.length})`:'mail ✖ error de EmailJS')}catch(e){res.push('mail ✖ sin conexión')}}
+  // whatsapp automático (CallMeBot)
+  const conK=AV.wa.filter(w=>w.k),sinK=AV.wa.filter(w=>!w.k);
+  for(const w of conK){
+    try{await fetch(`https://api.callmebot.com/whatsapp.php?phone=${w.t}&text=${encodeURIComponent(txt)}&apikey=${encodeURIComponent(w.k)}`,{mode:'no-cors'});res.push('WhatsApp ✔ '+(w.n||w.t))}
+    catch(e){res.push('WhatsApp ✖ '+(w.n||w.t))}}
+  if(sinK.length)res.push(`${sinK.length} WhatsApp sin clave (solo manual)`);
+  if(manual&&$('avlinks'))$('avlinks').innerHTML=sinK.length?'<div class="small">Abrí el mensaje ya escrito para quienes no tienen clave:</div>'+sinK.map(w=>`<a class="bl" style="display:inline-block;margin:6px 8px 0 0;padding:8px 12px;border-radius:10px;background:#25d366;color:#04210f;text-decoration:none;font-weight:700" href="https://wa.me/${w.t}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">📲 ${esc(w.n||w.t)}</a>`).join(''):'';
+  return res.join(' · ')||'sin destinatarios cargados'}
+async function avAhora(){
+  $('avest').textContent='Enviando…';
+  try{const r=await avEnviar(true);AV.res=r;AV.ult=Date.now();await avSet('ult',AV.ult);await avSet('res',r)}
+  catch(e){$('avest').textContent='No se pudo enviar. Revisá la conexión.';return}
+  avEstado()}
+let avBusy=false;
+async function avTick(){
+  if(!FB||avBusy)return;avBusy=true;
+  try{
+    const cfg=avNorm(await dbGet('config/avisos'));
+    AV={...AV,on:cfg.on,hs:cfg.hs,d:cfg.d,h:cfg.h,em:cfg.em,wa:cfg.wa,ej:cfg.ej,ult:cfg.ult,res:cfg.res};
+    if($('t3')&&!$('t3').classList.contains('hide')){if(!document.activeElement||!/INPUT|SELECT/.test(document.activeElement.tagName))avRender()}
+    if(!AV.on)return;
+    const now=new Date(),hr=now.getHours();
+    if(hr<AV.d||hr>=AV.h)return;
+    if(now.getTime()-AV.ult<AV.hs*3600000-30000)return;
+    // reservar el turno primero, para que otra pantalla abierta no mande lo mismo
+    await avSet('ult',now.getTime());AV.ult=now.getTime();
+    const cfg2=avNorm(await dbGet('config/avisos'));if(cfg2.ult!==AV.ult)return;
+    const r=await avEnviar(false);AV.res=r;await avSet('res',r);avEstado()
+  }catch(e){console.warn('avTick',e)}finally{avBusy=false}}
+
 /* ---- inicio ---- */
 function iniciarPanel(){
-  $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;$('b2').classList.toggle('hide',!FB);
-  refresh();setInterval(refresh,15000)}
+  $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;$('b2').classList.toggle('hide',!FB);$('b3').classList.toggle('hide',!FB);
+  refresh();setInterval(refresh,15000);
+  if(FB){avLoad().then(()=>{avRender();avTick()});setInterval(avTick,60000)}}
 function checkPin(){
   if($('pin').value===CONFIG.PIN){try{sessionStorage.setItem('pin','1')}catch(e){}$('gate').classList.add('hide');iniciarPanel()}
   else $('pinerr').textContent='PIN incorrecto'}
