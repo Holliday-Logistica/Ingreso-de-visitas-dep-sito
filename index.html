@@ -155,7 +155,8 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
         <div><label>DNI *</label><input id="dni" inputmode="numeric" placeholder="30123456"></div>
         <div><label>Teléfono</label><input id="tel" inputmode="tel"></div>
       </div>
-      <label>Empresa</label><input id="emp" placeholder="Empresa / Proveedor">
+      <label>Tipo de visita *</label><select id="tipo"><option value="">Elegí una opción…</option><option>Trabajador externo (otra empresa)</option><option>Trabajador interno (otra área de Holliday)</option><option>Proveedor</option><option>Transportista / Chofer</option><option>Cliente</option><option>Contratista / Mantenimiento</option><option>Auditor / Inspector</option><option>Visita particular</option><option>Otro</option></select>
+      <label>Empresa <span style="font-weight:400">(opcional)</span></label><input id="emp" placeholder="Empresa / Proveedor">
       <div class="row">
         <div><label>Motivo *</label><select id="mot"><option>Entrega de mercadería</option><option>Retiro de mercadería</option><option>Proveedor</option><option>Mantenimiento</option><option>Auditoría / Inspección</option><option>Reunión</option><option>Otro</option></select></div>
         <div><label>Patente</label><input id="pat" placeholder="AB123CD" style="text-transform:uppercase"></div>
@@ -311,6 +312,7 @@ async function dbPush(p,val){
   if(FB){await fetch(`${FB}/${p}.json`,{method:'POST',body:JSON.stringify(val)});return}
   await dbSet(p+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),val)}
 
+const tipoEmp=v=>(v.y?'<b>'+esc(v.y)+'</b>':'')+(v.y&&v.e?' · ':'')+(v.e?esc(v.e):(v.y?'':'Particular'));
 /* ---- pantalla que se ve al escanear el colgante ---- */
 /* El QR de la etiqueta de cada visita lleva los datos adentro: se lee en cualquier celular sin base de datos */
 async function vistaSnap(txt){
@@ -321,7 +323,7 @@ async function vistaSnap(txt){
   const hasta=v.t+v.h*3600000,venc=Date.now()>hasta;
   const st=fin?'<span class="status free">VISITA FINALIZADA</span>':`<span class="status ${venc?'bad':'ok'}">${venc?'⛔ CREDENCIAL VENCIDA':'✔ VISITA AUTORIZADA'}</span>`;
   $('scan').innerHTML=`<div class="sc"><div class="top"><b style="letter-spacing:.1em">${s.c?'COLGANTE N° '+esc(s.c):'VISITA'}</b><img src="${CONFIG.LOGO_BLANCO}" alt="Holliday" style="height:28px;width:auto"></div><div class="body">${st}
-  <h3>${esc(v.n)}</h3><div class="small">${esc(v.e)||'Particular'}</div>
+  <h3>${esc(v.n)}</h3><div class="small">${tipoEmp(v)}</div>
   <dl><dt>DNI</dt><dd>${mask(v.d)}</dd><dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>
   ${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(hasta)}</dd></dl>
   ${live?'':`<p class="small">Datos al momento del ingreso.</p>`}</div><div class="stripe"></div></div>`}
@@ -335,7 +337,7 @@ async function vistaScan(n){
   else{
     const hasta=v.t+v.h*3600000,venc=Date.now()>hasta;
     h+=`<span class="status ${venc?'bad':'ok'}">${venc?'⛔ CREDENCIAL VENCIDA':'✔ VISITA AUTORIZADA'}</span>
-    <h3>${esc(v.n)}</h3><div class="small">${esc(v.e)||'Particular'}</div>
+    <h3>${esc(v.n)}</h3><div class="small">${tipoEmp(v)}</div>
     <dl><dt>DNI</dt><dd>${mask(v.d)}</dd><dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>
     ${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(hasta)}</dd></dl>`;
   }
@@ -357,7 +359,8 @@ async function vistaIngreso(){
   <ol class="steps"><li>Completá tus datos.</li><li>Elegí un <b>colgante libre</b> (uno que veas en el tablero).</li><li>Tocá <b>Registrar ingreso</b>: te mostramos el número de tu colgante.</li><li>Retirá ese colgante del tablero y <b>colgátelo a la vista</b> durante toda tu visita.</li><li>Al irte, <b>devolvelo en recepción</b>.</li></ol></div>
   <div class="card"><label style="margin-top:0">Nombre y apellido *</label><input id="i_n" autocomplete="name" placeholder="Ej: Juan Pérez">
   <div class="row"><div><label>DNI *</label><input id="i_d" inputmode="numeric" placeholder="30123456"></div><div><label>Teléfono</label><input id="i_t" inputmode="tel"></div></div>
-  <label>Empresa</label><input id="i_e" placeholder="Empresa / Proveedor">
+  <label>Tipo de visita *</label><select id="i_y">${$('tipo').innerHTML}</select>
+  <label>Empresa <span style="font-weight:400">(opcional)</span></label><input id="i_e" placeholder="Empresa / Proveedor">
   <div class="row"><div><label>Motivo *</label><select id="i_m">${$('mot').innerHTML}</select></div><div><label>Patente</label><input id="i_p" placeholder="AB123CD" style="text-transform:uppercase"></div></div>
   <label>Visita a / Responsable *</label><input id="i_r" placeholder="Persona o sector">
   ${CONFIG.CODIGO_INGRESO?'<label>Código de recepción * <span style="font-weight:400">(figura en el cartel)</span></label><input id="i_c" autocomplete="off">':''}
@@ -369,7 +372,7 @@ function ingPick(i){ingSel=i;document.querySelectorAll('#ingg .cg').forEach(e=>e
 async function ingresar(){
   const g=id=>$(id).value.trim(),err=$('ierr'),btn=$('ib');
   const nm=g('i_n'),dni=dniN(g('i_d')),r=g('i_r');
-  if(nm.length<3||dni.length<6||!r){err.textContent='Completá nombre y apellido, DNI y a quién visitás.';return}
+  if(nm.length<3||dni.length<6||!r||!g('i_y')){err.textContent='Completá nombre y apellido, DNI, tipo de visita y a quién visitás.';return}
   if(!ingSel){err.textContent='Elegí un colgante libre.';return}
   if(CONFIG.CODIGO_INGRESO&&g('i_c')!==CONFIG.CODIGO_INGRESO){err.textContent='El código de recepción no es correcto.';return}
   err.textContent='';btn.disabled=true;
@@ -378,7 +381,7 @@ async function ingresar(){
     if(ya){err.textContent='Ya estás registrado/a con el colgante N° '+ya[0].slice(1)+'. Si es un error, consultá en recepción.';btn.disabled=false;return}
     const n=num(ingSel),sacar=()=>{const e=$('ig'+ingSel);if(e)e.remove();ingSel=null};
     if(c['c'+n]){err.textContent='Ese colgante acaba de ser tomado. Elegí otro.';sacar();btn.disabled=false;return}
-    const v={n:nm,d:dni,tl:g('i_t'),e:g('i_e'),m:$('i_m').value,p:g('i_p').toUpperCase(),r,h:CONFIG.HORAS_AUTO||4,t:Date.now(),a:1};
+    const v={n:nm,d:dni,tl:g('i_t'),e:g('i_e'),y:$('i_y').value,m:$('i_m').value,p:g('i_p').toUpperCase(),r,h:CONFIG.HORAS_AUTO||4,t:Date.now(),a:1};
     await dbSet('colgantes/c'+n,v);
     const chk=await dbGet('colgantes/c'+n);
     if(!chk||chk.t!==v.t||dniN(chk.d)!==dni){err.textContent='Otra persona tomó ese colgante justo antes. Elegí otro.';sacar();btn.disabled=false;return}
@@ -418,21 +421,21 @@ function pick(i){
   selN=i;renderGrid();const v=col['c'+num(i)],d=$('det');
   if(!v){d.classList.add('hide');$('colsel').value=num(i);return}
   d.classList.remove('hide');
-  d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${esc(v.e)}</span>
+  d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${tipoEmp(v)}</span>
   <dl>${v.a?'<dt>Registro</dt><dd>Autoingreso · verificar DNI</dd>':''}<dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
   <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>`}
 async function guardar(){
   const g=id=>$(id).value.trim(),n=$('colsel').value;
-  if(!g('nombre')||!g('dni')||!g('resp')){$('err').textContent='Completá nombre, DNI y a quién visita.';return}
+  if(!g('nombre')||!g('dni')||!g('resp')||!g('tipo')){$('err').textContent='Completá nombre, DNI, tipo de visita y a quién visita.';return}
   if(!n){$('err').textContent='No hay colgantes libres.';return}
   $('err').textContent='';
   try{
     if(await dbGet('colgantes/c'+n)){$('err').textContent='Ese colgante ya fue asignado. Elegí otro.';await refresh();return}
-    const v={n:g('nombre'),d:g('dni'),tl:g('tel'),e:g('emp'),m:$('mot').value,p:g('pat').toUpperCase(),r:g('resp'),h:+$('hs').value,t:Date.now()};
+    const v={n:g('nombre'),d:g('dni'),tl:g('tel'),e:g('emp'),y:$('tipo').value,m:$('mot').value,p:g('pat').toUpperCase(),r:g('resp'),h:+$('hs').value,t:Date.now()};
     await dbSet('colgantes/c'+n,v);
     $('res').classList.remove('hide');
     $('res').innerHTML=`<div class="big"><div class="small">ENTREGAR COLGANTE</div><div class="num">${n}</div><b>${esc(v.n)}</b><div class="small">Válido hasta ${fh(v.t+v.h*3600000)}</div></div>`;
-    ['nombre','dni','tel','emp','pat','resp'].forEach(i=>$(i).value='');
+    ['nombre','dni','tel','emp','pat','resp','tipo'].forEach(i=>$(i).value='');
     await refresh();$('nombre').focus();
   }catch(e){$('err').textContent='No se pudo guardar. Revisá la conexión.'}}
 async function salida(i){
@@ -448,8 +451,8 @@ async function csv(){
     Object.entries(col).forEach(([k,v])=>{if(new Date(v.t).toDateString()===hoy)rows.push({...v,c:k.slice(1),s:''})});
     rows.sort((a,b)=>a.t-b.t);
     const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-    const out=['Colgante,Nombre,DNI,Telefono,Empresa,Motivo,Visita a,Patente,Ingreso,Salida,Registro']
-      .concat(rows.map(v=>[v.c,v.n,v.d,v.tl,v.e,v.m,v.r,v.p,fh(v.t),v.s?fh(v.s):'ADENTRO',v.a?'AUTOINGRESO':'RECEPCION'].map(q).join(','))).join('\n');
+    const out=['Colgante,Nombre,DNI,Telefono,Tipo,Empresa,Motivo,Visita a,Patente,Ingreso,Salida,Registro']
+      .concat(rows.map(v=>[v.c,v.n,v.d,v.tl,v.y||'',v.e,v.m,v.r,v.p,fh(v.t),v.s?fh(v.s):'ADENTRO',v.a?'AUTOINGRESO':'RECEPCION'].map(q).join(','))).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out],{type:'text/csv'}));
     a.download='visitas-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   }catch(e){alert('No se pudo generar el CSV.')}}
@@ -559,7 +562,7 @@ function avMensaje(c,now){
   const L=Object.entries(c||{}).map(([k,v])=>({c:k.slice(1),...v})).sort((a,b)=>a.t-b.t);
   const hh=pad(new Date(now).getHours())+':'+pad(new Date(now).getMinutes());
   if(!L.length)return{n:0,txt:`🏭 Chequeo de visitas ${hh}\nNo hay visitas registradas en depósito.`};
-  const lines=L.map(v=>`• Colgante ${v.c} · ${v.n}${v.e?' ('+v.e+')':''} · visita a ${v.r} · ingresó ${fh(v.t).slice(11)} (${durTxt(now-v.t)})${now>v.t+v.h*3600000?' ⚠ VENCIDA':''}`);
+  const lines=L.map(v=>`• Colgante ${v.c} · ${v.n}${v.y||v.e?' ('+[v.y,v.e].filter(Boolean).join(' · ')+')':''} · visita a ${v.r} · ingresó ${fh(v.t).slice(11)} (${durTxt(now-v.t)})${now>v.t+v.h*3600000?' ⚠ VENCIDA':''}`);
   return{n:L.length,txt:`🏭 Chequeo de visitas ${hh}\nHay ${L.length} ${L.length===1?'persona registrada':'personas registradas'} en depósito:\n\n${lines.join('\n')}\n\nSi alguien ya se fue, registrá su salida en recepción.`}}
 /* WhatsApp con un toque: abre el mensaje ya escrito en el WhatsApp de quien toca */
 function avWaManual(){
