@@ -187,8 +187,8 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="avon" style="width:auto" onchange="avCfg()"> Aviso automático activado</label>
     <div class="row">
       <div><label>Repetir cada</label><select id="avhs" onchange="avCfg()"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option><option value="4">4 horas</option></select></div>
-      <div><label>Desde las (hs)</label><input id="avd" type="number" min="0" max="23" onchange="avCfg()"></div>
-      <div><label>Hasta las (hs)</label><input id="avh" type="number" min="1" max="24" onchange="avCfg()"></div>
+      <div><label>Primer aviso a las (hs)</label><input id="avd" type="number" min="0" max="23" onchange="avCfg()"></div>
+      <div><label>Último antes de las (hs)</label><input id="avh" type="number" min="1" max="24" onchange="avCfg()"></div>
     </div>
     <div class="small" id="avest" style="margin-top:10px"></div>
     <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
@@ -524,7 +524,7 @@ function avRender(){
   avEstado()}
 function avEstado(){
   if(!$('avest'))return;
-  $('avest').innerHTML=(AV.on?`🟢 Activo · de ${AV.d} a ${AV.h} hs · cada ${AV.hs} h`:'⚪ Desactivado')
+  $('avest').innerHTML=(AV.on?`🟢 Activo · avisos en punto desde las ${AV.d} hasta las ${AV.h} hs, cada ${AV.hs} h`:'⚪ Desactivado')
     +(AV.ult?`<br>Último aviso: <b>${fh(AV.ult)}</b>${AV.res?' · '+esc(AV.res):''}`:(AV.on?'<br>Todavía no se envió ningún aviso (¿ya instalaste el script de Google?).':''))}
 async function avCfg(){
   AV.on=$('avon').checked;AV.hs=+$('avhs').value||2;
@@ -561,7 +561,7 @@ function avWaManual(){
   $('avlinks').innerHTML='<div class="small">Tocá un contacto para abrir el mensaje ya escrito:</div>'+(AV.wa.length?AV.wa.map(w=>`<a style="${st}" href="https://wa.me/${w.t}?text=${T}" target="_blank" rel="noopener">📲 ${esc(w.n||w.t)}</a>`).join(''):`<a style="${st}" href="https://wa.me/?text=${T}" target="_blank" rel="noopener">📲 Elegir contacto</a>`)}
 /* "Enviar ahora": deja un pedido en la base y el script de Google lo envía en los próximos minutos */
 async function avAhora(){
-  try{await avSet('ahora',Date.now());$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Pedido enviado.</span> El mail llega en unos minutos (hasta 5). Cuando salga, aparece arriba en “Último aviso”.'}
+  try{await avSet('ahora',Date.now());$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Pedido enviado.</span> El mail llega en menos de 1 minuto. Cuando salga, aparece arriba en “Último aviso”.'}
   catch(e){avFallo()}}
 async function avTick(){
   if(!FB)return;
