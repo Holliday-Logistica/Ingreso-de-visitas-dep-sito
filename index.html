@@ -69,16 +69,31 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 .lbl .cel b{font-size:19mm;line-height:1;font-weight:900}
 .lbl .pn{font-weight:900;font-size:4.6mm}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;overflow:auto}
-.fx{width:var(--lw,90mm);height:var(--lh,50mm);padding:4mm;display:flex;gap:4mm;align-items:center;background:#fff;color:#000;border:1px solid #000;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
-.fx .q{height:calc(var(--lh,50mm) - 8mm);width:calc(var(--lh,50mm) - 8mm);flex:none}
+.fx{width:var(--lw,50mm);height:var(--lh,90mm);padding:3.5mm 4mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;background:#fff;color:#000;border:1px solid #000;font-family:Arial,Helvetica,sans-serif;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.fx .slot{width:12mm;height:3mm;border:.3mm dashed #888;border-radius:1.5mm;flex:none}
+.fx .lg{height:9mm;max-width:100%;object-fit:contain;flex:none;display:flex;align-items:center;justify-content:center}
+.fx .wm{font-weight:900;font-size:3.9mm;letter-spacing:.06em;white-space:nowrap}
+.fx .t{background:#000;color:#fff;width:100%;font-weight:900;font-size:5mm;letter-spacing:.25em;padding:1.4mm 0;flex:none}
+.fx .q{width:36mm;height:36mm;flex:none}
 .fx .q img,.fx .q canvas{width:100%!important;height:100%!important;image-rendering:pixelated;display:block}
-.fx .r{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;text-align:center}
-.fx .t{background:#000;color:#fff;font-weight:900;font-size:5mm;letter-spacing:.2em;padding:1.2mm 0}
-.fx small{display:block;font-size:2.8mm;font-weight:700;letter-spacing:.1em}
-.fx .n{font-size:15mm;font-weight:900;line-height:1}
-.fx .s{font-size:2.5mm;font-weight:700;line-height:1.2}
-#sheet.a4{display:grid;grid-template-columns:repeat(2,var(--lw,90mm));gap:3mm;justify-content:center}
+.fx small{display:block;font-size:2.6mm;font-weight:700;letter-spacing:.12em}
+.fx .n{font-size:14mm;font-weight:900;line-height:1}
+.fx .s{font-size:2.5mm;font-weight:700;line-height:1.25}
+#sheet.a4{display:grid;grid-template-columns:repeat(var(--cols,3),var(--lw,50mm));gap:3mm;justify-content:center}
 #sheet.a4 .fx{break-inside:avoid}
+/* autoingreso y cartel */
+#ing{max-width:460px;margin:-34px auto 40px;padding:0 16px}
+.steps{margin:8px 0 0;padding-left:20px;text-align:left}.steps li{margin:7px 0}
+#ingg .cg.sel{background:var(--ac);color:#1b1300;border-color:var(--ac)}
+#autoqr img,#autoqr canvas{width:100%!important;height:100%!important;display:block}
+.wmw{font-weight:900;letter-spacing:.08em;text-align:center;margin-bottom:8px;font-size:1.15rem}
+.cart{width:190mm;margin:0 auto;padding:6mm 8mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cart img.lg{height:18mm;margin:0 auto 4mm;display:block;object-fit:contain}
+.cart .wm{font-weight:900;font-size:9mm;letter-spacing:.08em;margin-bottom:4mm}
+.cart h1{margin:0;font-size:13mm;background:#000;color:#fff;padding:3mm 0;letter-spacing:.1em}
+.cart ol{text-align:left;font-size:5.4mm;line-height:1.35;margin:7mm auto;max-width:165mm;padding-left:8mm}.cart li{margin-bottom:3.5mm}
+.cart .q{width:75mm;height:75mm;margin:0 auto}.cart .q img,.cart .q canvas{width:100%!important;height:100%!important;image-rendering:pixelated;display:block}
+.cart .foot{margin-top:5mm;font-size:4.5mm;font-weight:700}
 @media print{
  html,body{background:#fff!important;margin:0;padding:0}
  .np{display:none!important}
@@ -86,7 +101,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
  .fx{border:0;break-after:page;page-break-after:always}
  .fx:last-child{break-after:auto;page-break-after:auto}
  #sheet.a4{display:grid}
- #sheet.a4 .fx{break-after:auto;page-break-after:auto}
+ #sheet.a4 .fx{break-after:auto;page-break-after:auto;border:.25mm dashed #999}
+ body.pcartel #panel{display:none!important}
+ body.pcartel #cartelArea{display:block!important}
 }
 </style>
 </head>
@@ -99,6 +116,9 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 
 <!-- Pantalla al escanear un colgante -->
 <div id="scan" class="hide np"></div>
+
+<!-- Autoingreso de la visita (QR de recepción) -->
+<div id="ing" class="hide np"></div>
 
 <!-- Clave de recepción -->
 <div id="gate" class="gate hide np"><div class="card">
@@ -115,6 +135,13 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <!-- RECEPCIÓN -->
 <div id="t1" class="grid2 np">
   <div>
+    <div class="card" id="autoc"><h2>📲 Autoingreso por QR</h2>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <div id="autoqr" style="width:130px;height:130px;background:#fff;padding:6px;border-radius:10px;flex:none"></div>
+        <div style="flex:1;min-width:180px"><p class="small" style="margin:0 0 8px">La persona escanea este QR con su celular, completa sus datos, elige un colgante libre y sigue el instructivo. Después la ves acá en amarillo (📲).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="cartelAuto()">🖨 Imprimir cartel (A4)</button><button onclick="window.open(autoUrl(),'_blank')">Probar formulario</button></div></div>
+      </div>
+    </div>
     <div class="card">
       <label style="margin-top:0">📷 Escanear colgante (lector USB o cámara)</label>
       <div style="display:flex;gap:8px"><input id="scanin" placeholder="Escaneá el QR del colgante" autocomplete="off" onkeydown="if(event.key==='Enter')leerScan(this.value)"><button class="pri" style="width:auto;margin:0" onclick="camara()">📷</button></div>
@@ -155,8 +182,8 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 <!-- AVISOS -->
 <div id="t3" class="hide np"><div style="max-width:1040px;margin:0 auto 40px;padding:0 16px">
   <div class="card">
-    <h2>🔔 Chequeo automático de visitas en depósito</h2>
-    <p class="small">Cada cierto tiempo se revisa quién sigue registrado y se envía la lista a los mails y WhatsApp cargados abajo, para detectar a quien olvidó dar la salida. <b>Funciona mientras la pantalla de Recepción esté abierta en algún equipo</b> (si hay varias abiertas, se envía una sola vez). Si no hay nadie adentro, no se manda nada.</p>
+    <h2>🔔 Aviso de visitas que siguen adentro</h2>
+    <p class="small">Cada cierto tiempo se envía a los mails de abajo la lista de quiénes siguen registrados en el depósito, para detectar a quien olvidó dar la salida. Si no hay nadie adentro, no se manda nada. <b>Se envía solo, aunque no haya ninguna pantalla abierta</b> (lo hace el script de Google que se instala una sola vez: archivo <b>avisos-visitas.gs</b>).</p>
     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="avon" style="width:auto" onchange="avCfg()"> Aviso automático activado</label>
     <div class="row">
       <div><label>Repetir cada</label><select id="avhs" onchange="avCfg()"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option><option value="4">4 horas</option></select></div>
@@ -164,34 +191,33 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
       <div><label>Hasta las (hs)</label><input id="avh" type="number" min="1" max="24" onchange="avCfg()"></div>
     </div>
     <div class="small" id="avest" style="margin-top:10px"></div>
-    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="pri" style="width:auto;margin:0" onclick="avAhora()">📤 Enviar chequeo ahora (prueba)</button></div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button class="pri" style="width:auto;margin:0" onclick="avAhora()">📤 Enviar un aviso ahora (prueba)</button>
+      <button onclick="avWaManual()">📲 Abrir WhatsApp con la lista</button>
+      <button onclick="avProbar()">🔌 Probar que se guarda</button>
+    </div>
+    <div id="avdiag" class="small" style="margin-top:10px"></div>
     <div id="avlinks" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>✉ Mails que reciben el aviso</h2>
     <div id="avem"></div>
     <div style="display:flex;gap:8px;margin-top:8px"><input id="avemn" type="email" placeholder="nombre@empresa.com" onkeydown="if(event.key==='Enter')avAddEm()"><button class="pri" style="width:auto;margin:0" onclick="avAddEm()">Agregar</button></div>
+    <p class="small" style="margin-top:10px"><b>¿Desde qué casilla llega?</b> Sale de la cuenta de Google con la que se instaló el script: <b id="avde">todavía sin instalar</b>. Conviene usar una cuenta de la empresa (ej. de Logística) y no una personal.</p>
   </div>
   <div class="card">
-    <h2>📲 WhatsApp que reciben el aviso</h2>
+    <h2>📲 WhatsApp</h2>
     <div id="avwa"></div>
     <div class="row" style="margin-top:8px">
       <div><label>Nombre</label><input id="avwn" placeholder="Ej: Juan"></div>
-      <div><label>Número con código de país</label><input id="avwt" inputmode="tel" placeholder="5491122334455"></div>
-      <div><label>Clave CallMeBot</label><input id="avwk" placeholder="opcional"></div>
+      <div><label>Número (con código de área, sin 0 ni 15)</label><input id="avwt" inputmode="tel" placeholder="11 5555 1234"></div>
     </div>
     <button style="margin-top:10px" onclick="avAddWa()">Agregar número</button>
-    <p class="small" style="margin-top:10px">WhatsApp no permite que una página envíe mensajes sola. Para que llegue <b>automático</b>, cada persona activa una sola vez el servicio gratuito <b>CallMeBot</b>: desde su WhatsApp le escribe <i>I allow callmebot to send me messages</i> al <b>+34 644 51 95 23</b> y recibe una clave, que se carga acá. Los números <b>sin clave</b> no reciben automático: al tocar “Enviar chequeo ahora” aparece un botón para abrirles el mensaje ya escrito.</p>
-  </div>
-  <div class="card">
-    <h2>⚙ Datos de EmailJS (para los mails)</h2>
-    <div class="row">
-      <div><label>Service ID</label><input id="ejs"></div>
-      <div><label>Template ID</label><input id="ejt"></div>
-      <div><label>Public Key</label><input id="ejk"></div>
-    </div>
-    <button style="margin-top:10px" onclick="avSaveEj()">Guardar datos de EmailJS</button>
-    <p class="small" style="margin-top:10px">En EmailJS la plantilla debe tener el campo <b>To Email</b> = <code>{{to_email}}</code>, el <b>Subject</b> = <code>{{subject}}</code> y en el cuerpo <code>{{message}}</code>. Se manda un solo mail con todos los destinatarios. Podés usar los mismos datos que en la página de Retiro de Pedidos.</p>
+    <p class="small" style="margin-top:10px">Con el botón <b>“Abrir WhatsApp con la lista”</b> se abre el mensaje ya escrito en tu WhatsApp y lo mandás con un toque. WhatsApp no permite que una página envíe mensajes sola sin un servicio pago.</p>
+    <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Opcional: que llegue solo por WhatsApp (gratis, con CallMeBot)</summary>
+      <p class="small">Cada persona hace esto <b>una sola vez</b>: desde su WhatsApp le escribe <i>I allow callmebot to send me messages</i> al <b>+34 644 51 95 23</b>. Le responden con una clave. Esa clave se carga acá al agregar el número. El mensaje llega desde el número de CallMeBot, no desde uno de la empresa.</p>
+      <label>Clave de ese número (se agrega al próximo número que cargues)</label><input id="avwk" placeholder="clave que te respondió CallMeBot">
+    </details>
   </div>
 </div></div>
 
@@ -210,13 +236,15 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
         <button onclick="armar()">Vista previa</button>
         <button class="pri" style="width:auto;margin:0" onclick="window.print()">🖨 Imprimir</button>
       </div>
-      <p class="small" style="margin-top:12px">Los QR apuntan a: <b id="burl"></b></p><div class="err" id="urlwarn"></div><p class="small" id="pa4">Cada credencial mide <b class="tam"></b> (9 × 5 cm) y entran <b>10 por hoja A4</b> (2 × 5), con una separación entre ellas para recortar. En el cuadro de impresión: papel <b>A4</b>, márgenes <b>Ninguno o Predeterminados</b>, escala <b>100%</b> (no “Ajustar a página”), sin encabezados ni pies.</p>
+      <p class="small" style="margin-top:12px">Los QR apuntan a: <b id="burl"></b></p><div class="err" id="urlwarn"></div><p class="small" id="pa4">Cada credencial mide <b class="tam"></b> (<span id="tamcm"></span>, en vertical) y entran <b id="perpg"></b> por hoja A4 (<span id="gridtxt"></span>), con una separación entre ellas para recortar. En el cuadro de impresión: papel <b>A4</b>, márgenes <b>Ninguno o Predeterminados</b>, escala <b>100%</b> (no “Ajustar a página”), sin encabezados ni pies.</p>
       <p class="small hide" id="pzeb">En el cuadro de impresión: impresora <b>ZDesigner ZD421</b>, tamaño de papel <b class="tam"></b>, márgenes <b>Ninguno</b>, escala <b>100%</b>, sin encabezados ni pies. Se imprimen una sola vez; el colgante se reutiliza con cualquier visita.</p>
     </div>
   </div>
   <div id="sheet" class="a4"></div>
 </div>
 </div>
+
+<div id="cartelArea" class="hide"></div>
 
 <div id="scanmodal" class="modal hide np">
   <video id="vid" playsinline muted style="max-width:100%;max-height:60vh;border-radius:14px;background:#000"></video><canvas id="cv" class="hide"></canvas>
@@ -229,8 +257,12 @@ dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
 const CONFIG={
   COLGANTES:30,          // cantidad de colgantes
   FIREBASE_URL:'https://ingreso-de-visitas-default-rtdb.firebaseio.com',
-  ETIQ_W:90,             // ancho de la etiqueta en mm
-  ETIQ_H:50,             // alto de la etiqueta en mm
+  ETIQ_W:50,             // ancho del colgante en mm (5 cm)
+  ETIQ_H:90,             // alto del colgante en mm (9 cm) → se imprime en vertical
+  LOGO:'',               // logo de Holliday Scott: pegá 'data:image/png;base64,...' o el nombre de un archivo subido junto a esta página (ej: 'logo.png'). Vacío = se imprime el nombre en texto
+  GUIA_AGUJERO:true,     // dibuja una guía arriba para perforar el colgante
+  HORAS_AUTO:4,          // validez (horas) de los ingresos que se registran solos por QR
+  CODIGO_INGRESO:'',     // opcional: código que se pide en el autoingreso (ponelo en el cartel de recepción para que solo se registre quien está presente)
   BASE_URL:'',           // opcional: dirección pública fija de esta página (si se imprime desde otro lugar)
   PIN:'',                // PIN opcional para abrir la pantalla de recepción
 };
@@ -245,11 +277,14 @@ const fh=t=>{const d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const base=()=>CONFIG.BASE_URL||location.href.split('#')[0];
 const PST=document.createElement('style');document.head.appendChild(PST);
+const GRID=()=>{const g=3,W=CONFIG.ETIQ_W,H=CONFIG.ETIQ_H;return{c:Math.max(1,Math.floor((194+g)/(W+g))),r:Math.max(1,Math.floor((281+g)/(H+g)))}};
 function applyPage(a4){
-  PST.textContent=`:root{--lw:${CONFIG.ETIQ_W}mm;--lh:${CONFIG.ETIQ_H}mm}`+(a4
+  PST.textContent=`:root{--lw:${CONFIG.ETIQ_W}mm;--lh:${CONFIG.ETIQ_H}mm;--cols:${GRID().c}}`+(a4
     ?`@media print{@page{size:A4;margin:8mm}}`
     :`@media print{@page{size:${CONFIG.ETIQ_W}mm ${CONFIG.ETIQ_H}mm;margin:0}}`)}
 applyPage(true);
+const logoHTML=()=>CONFIG.LOGO?`<img class="lg" src="${esc(CONFIG.LOGO)}" alt="Holliday Scott">`:'<div class="lg wm">HOLLIDAY SCOTT</div>';
+const logoWeb=()=>CONFIG.LOGO?`<img src="${esc(CONFIG.LOGO)}" alt="Holliday Scott" style="height:44px;display:block;margin:0 auto 8px;object-fit:contain">`:'<div class="wmw">HOLLIDAY SCOTT</div>';
 const mask=d=>{const x=String(d||'').replace(/\D/g,'');return x?'•••'+x.slice(-3):'—'};
 
 /* ---- almacenamiento: Firebase (compartido) o localStorage (este equipo) ---- */
@@ -301,6 +336,61 @@ async function vistaScan(n){
   $('scan').innerHTML=h+`</div><div class="stripe"></div></div>`;
 }
 
+/* ---- AUTOINGRESO: la visita se registra sola desde su celular (#ingreso) ---- */
+const autoUrl=()=>base()+'#ingreso';
+const dniN=s=>String(s||'').replace(/\D/g,'');
+let ingSel=null;
+async function vistaIngreso(){
+  const el=$('ing');el.classList.remove('hide');
+  if(!FB){el.innerHTML='<div class="card"><h2>Registro no disponible</h2><p class="small">Esta página todavía no está conectada a la base de datos. Registrate en recepción.</p></div>';return}
+  el.innerHTML='<div class="card"><p class="small" style="margin:0">Cargando…</p></div>';
+  let c;try{c=(await dbGet('colgantes'))||{}}catch(e){el.innerHTML='<div class="card"><span class="status bad">Sin conexión</span><p class="small">Revisá tu internet e intentá de nuevo, o registrate en recepción.</p></div>';return}
+  const libres=[];for(let i=1;i<=CONFIG.COLGANTES;i++)if(!c['c'+num(i)])libres.push(i);
+  ingSel=null;
+  el.innerHTML=`<div class="card">${logoWeb()}<h2 style="text-align:center">Registrá tu ingreso</h2>
+  <ol class="steps"><li>Completá tus datos.</li><li>Elegí un <b>colgante libre</b> (uno que veas en el tablero).</li><li>Tocá <b>Registrar ingreso</b>: te mostramos el número de tu colgante.</li><li>Retirá ese colgante del tablero y <b>colgátelo a la vista</b> durante toda tu visita.</li><li>Al irte, <b>devolvelo en recepción</b>.</li></ol></div>
+  <div class="card"><label style="margin-top:0">Nombre y apellido *</label><input id="i_n" autocomplete="name" placeholder="Ej: Juan Pérez">
+  <div class="row"><div><label>DNI *</label><input id="i_d" inputmode="numeric" placeholder="30123456"></div><div><label>Teléfono</label><input id="i_t" inputmode="tel"></div></div>
+  <label>Empresa</label><input id="i_e" placeholder="Empresa / Proveedor">
+  <div class="row"><div><label>Motivo *</label><select id="i_m">${$('mot').innerHTML}</select></div><div><label>Patente</label><input id="i_p" placeholder="AB123CD" style="text-transform:uppercase"></div></div>
+  <label>Visita a / Responsable *</label><input id="i_r" placeholder="Persona o sector">
+  ${CONFIG.CODIGO_INGRESO?'<label>Código de recepción * <span style="font-weight:400">(figura en el cartel)</span></label><input id="i_c" autocomplete="off">':''}
+  <label>Elegí tu colgante *</label>
+  ${libres.length?`<div class="badges" id="ingg">${libres.map(i=>`<div class="cg" id="ig${i}" onclick="ingPick(${i})"><b>${num(i)}</b><span>libre</span></div>`).join('')}</div><div class="small" style="margin-top:6px">Si el colgante no está en el tablero, elegí otro.</div>`:'<div class="small">No hay colgantes libres. Consultá en recepción.</div>'}
+  <div class="err" id="ierr"></div>
+  <button class="pri" id="ib" onclick="ingresar()" ${libres.length?'':'disabled'}>Registrar ingreso</button></div>`}
+function ingPick(i){ingSel=i;document.querySelectorAll('#ingg .cg').forEach(e=>e.classList.toggle('sel',e.id==='ig'+i))}
+async function ingresar(){
+  const g=id=>$(id).value.trim(),err=$('ierr'),btn=$('ib');
+  const nm=g('i_n'),dni=dniN(g('i_d')),r=g('i_r');
+  if(nm.length<3||dni.length<6||!r){err.textContent='Completá nombre y apellido, DNI y a quién visitás.';return}
+  if(!ingSel){err.textContent='Elegí un colgante libre.';return}
+  if(CONFIG.CODIGO_INGRESO&&g('i_c')!==CONFIG.CODIGO_INGRESO){err.textContent='El código de recepción no es correcto.';return}
+  err.textContent='';btn.disabled=true;
+  try{
+    const c=(await dbGet('colgantes'))||{},ya=Object.entries(c).find(([k,v])=>dniN(v.d)===dni);
+    if(ya){err.textContent='Ya estás registrado/a con el colgante N° '+ya[0].slice(1)+'. Si es un error, consultá en recepción.';btn.disabled=false;return}
+    const n=num(ingSel),sacar=()=>{const e=$('ig'+ingSel);if(e)e.remove();ingSel=null};
+    if(c['c'+n]){err.textContent='Ese colgante acaba de ser tomado. Elegí otro.';sacar();btn.disabled=false;return}
+    const v={n:nm,d:dni,tl:g('i_t'),e:g('i_e'),m:$('i_m').value,p:g('i_p').toUpperCase(),r,h:CONFIG.HORAS_AUTO||4,t:Date.now(),a:1};
+    await dbSet('colgantes/c'+n,v);
+    const chk=await dbGet('colgantes/c'+n);
+    if(!chk||chk.t!==v.t||dniN(chk.d)!==dni){err.textContent='Otra persona tomó ese colgante justo antes. Elegí otro.';sacar();btn.disabled=false;return}
+    $('ing').innerHTML=`<div class="card"><div class="big"><span class="status ok">✔ INGRESO REGISTRADO</span><div class="small" style="margin-top:14px">TU COLGANTE ES EL</div><div class="num">${n}</div><b>${esc(nm)}</b><div class="small">Válido hasta ${fh(v.t+v.h*3600000)}</div></div>
+    <ol class="steps"><li>Retirá el colgante <b>N° ${n}</b> del tablero.</li><li>Colgátelo <b>a la vista</b> durante toda tu visita.</li><li>Al irte, <b>devolvelo en recepción</b>.</li></ol></div>`;
+    window.scrollTo(0,0)
+  }catch(e){err.textContent='No se pudo registrar. Revisá la conexión e intentá de nuevo.';btn.disabled=false}}
+function cartelAuto(){
+  const a=$('cartelArea');
+  a.innerHTML=`<div class="cart">${logoHTML()}<h1>REGISTRÁ TU INGRESO</h1>
+  <ol><li>Escaneá este QR con la cámara de tu celular.</li><li>Completá tus datos y elegí un <b>colgante libre</b>.</li><li>Tocá <b>Registrar ingreso</b>: te mostramos el número de tu colgante.</li><li>Retirá ese colgante del tablero y <b>colgátelo a la vista</b> durante toda tu visita.</li><li>Al irte, <b>devolvelo en recepción</b>.</li></ol>
+  <div class="q"></div><div class="foot">${CONFIG.CODIGO_INGRESO?'Código de recepción: '+esc(CONFIG.CODIGO_INGRESO)+' · ':''}¿Algún problema? Consultá en recepción.</div></div>`;
+  try{new QRCode(a.querySelector('.q'),{text:autoUrl(),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}
+  applyPage(true);document.body.classList.add('pcartel');
+  const fin=()=>{document.body.classList.remove('pcartel');applyPage($('pmode').value==='a4');removeEventListener('afterprint',fin)};
+  addEventListener('afterprint',fin);
+  setTimeout(()=>window.print(),200)}
+
 /* ---- recepción ---- */
 let col={},selN=null;
 async function refresh(){
@@ -311,7 +401,7 @@ function renderGrid(){
   let occ=0,h='';
   for(let i=1;i<=CONFIG.COLGANTES;i++){
     const v=col['c'+num(i)];if(v)occ++;
-    h+=`<div class="cg ${v?'occ':''} ${selN===i?'sel':''}" onclick="pick(${i})"><b>${num(i)}</b><span>${v?esc(v.n):'libre'}</span></div>`}
+    h+=`<div class="cg ${v?'occ':''} ${selN===i?'sel':''}" onclick="pick(${i})"><b>${num(i)}</b><span>${v?(v.a?'📲 ':'')+esc(v.n):'libre'}</span></div>`}
   $('grid').innerHTML=h;$('cnt').textContent=`· ${occ} en uso / ${CONFIG.COLGANTES - occ} libres`}
 function fillSel(){
   const cur=$('colsel').value;let h='';
@@ -323,7 +413,7 @@ function pick(i){
   if(!v){d.classList.add('hide');$('colsel').value=num(i);return}
   d.classList.remove('hide');
   d.innerHTML=`<h2>Colgante N° ${num(i)} · en uso</h2><b>${esc(v.n)}</b> <span class="small">${esc(v.e)}</span>
-  <dl><dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
+  <dl>${v.a?'<dt>Registro</dt><dd>Autoingreso · verificar DNI</dd>':''}<dt>DNI</dt><dd>${esc(v.d)}</dd>${v.tl?`<dt>Teléfono</dt><dd>${esc(v.tl)}</dd>`:''}<dt>Motivo</dt><dd>${esc(v.m)}</dd><dt>Visita a</dt><dd>${esc(v.r)}</dd>${v.p?`<dt>Patente</dt><dd>${esc(v.p)}</dd>`:''}<dt>Ingreso</dt><dd>${fh(v.t)}</dd><dt>Válido hasta</dt><dd>${fh(v.t+v.h*3600000)}</dd></dl>
   <button class="pri" onclick="salida(${i})">Registrar salida y liberar colgante</button>`}
 async function guardar(){
   const g=id=>$(id).value.trim(),n=$('colsel').value;
@@ -352,8 +442,8 @@ async function csv(){
     Object.entries(col).forEach(([k,v])=>{if(new Date(v.t).toDateString()===hoy)rows.push({...v,c:k.slice(1),s:''})});
     rows.sort((a,b)=>a.t-b.t);
     const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-    const out=['Colgante,Nombre,DNI,Telefono,Empresa,Motivo,Visita a,Patente,Ingreso,Salida']
-      .concat(rows.map(v=>[v.c,v.n,v.d,v.tl,v.e,v.m,v.r,v.p,fh(v.t),v.s?fh(v.s):'ADENTRO'].map(q).join(','))).join('\n');
+    const out=['Colgante,Nombre,DNI,Telefono,Empresa,Motivo,Visita a,Patente,Ingreso,Salida,Registro']
+      .concat(rows.map(v=>[v.c,v.n,v.d,v.tl,v.e,v.m,v.r,v.p,fh(v.t),v.s?fh(v.s):'ADENTRO',v.a?'AUTOINGRESO':'RECEPCION'].map(q).join(','))).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out],{type:'text/csv'}));
     a.download='visitas-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   }catch(e){alert('No se pudo generar el CSV.')}}
@@ -365,7 +455,7 @@ function armar(){
   if(b<a)b=a;const s=$('sheet');s.innerHTML='';
   for(let i=a;i<=b;i++){
     const d=document.createElement('div');d.className='fx';
-    d.innerHTML=`<div class="q"></div><div class="r"><div class="t">VISITA</div><div><small>COLGANTE N°</small><div class="n">${num(i)}</div></div><div class="s">ESCANEAR PARA VER DATOS<br>DEVOLVER EN RECEPCIÓN</div></div>`;
+    d.innerHTML=`${CONFIG.GUIA_AGUJERO?'<div class="slot"></div>':''}${logoHTML()}<div class="t">VISITA</div><div class="q"></div><div><small>COLGANTE N°</small><div class="n">${num(i)}</div></div><div class="s">ESCANEAR PARA VER DATOS<br>DEVOLVER EN RECEPCIÓN</div>`;
     s.appendChild(d);
     try{new QRCode(d.querySelector('.q'),{text:base()+'#b='+num(i),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}}
 function tab(n){
@@ -375,6 +465,7 @@ function tab(n){
   if(n===2){
     document.querySelectorAll('.tam').forEach(e=>e.textContent=CONFIG.ETIQ_W+' × '+CONFIG.ETIQ_H+' mm');
     $('burl').textContent=base();
+    const G=GRID();$('tamcm').textContent=(CONFIG.ETIQ_W/10)+' cm de ancho × '+(CONFIG.ETIQ_H/10)+' cm de alto';$('perpg').textContent=G.c*G.r;$('gridtxt').textContent=G.c+' × '+G.r;
     $('urlwarn').textContent=(/^https?:/.test(location.protocol)||CONFIG.BASE_URL)?'':'⚠ Abrí esta página desde su dirección publicada (GitHub) antes de imprimir; si no, los QR no se van a poder leer desde otros equipos.';
     if(!$('sheet').children.length){$('d2').value=CONFIG.COLGANTES;armar()}}}
 
@@ -405,49 +496,57 @@ function leerCam(){
 function cerrarCam(){scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('scanmodal').classList.add('hide')}
 
 
-/* ---- AVISOS PROGRAMADOS: chequeo de quién sigue en depósito ---- */
-let AV={on:false,hs:2,d:7,h:20,em:[],wa:[],ej:{s:'',t:'',k:''},ult:0,res:''};
+/* ---- AVISOS: acá se configuran y se guardan; el envío automático lo hace el script de Google (avisos-visitas.gs) ---- */
+let AV={on:false,hs:2,d:7,h:20,em:[],wa:[],ult:0,res:'',de:'',ahora:0};
 const arr=x=>Array.isArray(x)?x.filter(Boolean):(x&&typeof x==='object'?Object.values(x).filter(Boolean):[]);
-function avNorm(x){x=x||{};return{on:!!x.on,hs:+x.hs||2,d:x.d==null?7:+x.d,h:x.h==null?20:+x.h,em:arr(x.em),wa:arr(x.wa),ej:{s:'',t:'',k:'',...(x.ej||{})},ult:+x.ult||0,res:x.res||''}}
+function avNorm(x){x=x||{};return{on:!!x.on,hs:+x.hs||2,d:x.d==null?7:+x.d,h:x.h==null?20:+x.h,em:arr(x.em),wa:arr(x.wa),ult:+x.ult||0,res:x.res||'',de:x.de||'',ahora:+x.ahora||0}}
 async function avLoad(){try{AV=avNorm(await dbGet('config/avisos'))}catch(e){}}
 const avSet=(k,v)=>dbSet('config/avisos/'+k,v);
+const FBPROY=()=>FB.replace(/^https?:\/\//,'').split('-default-rtdb')[0].split('.')[0];
+function avFallo(){
+  $('avdiag').innerHTML=`<div style="color:var(--bad);font-weight:700">❌ No se pudo guardar.</div>
+  <p class="small" style="margin:6px 0">La página no tiene permiso para escribir en la base de datos (Firebase, proyecto <b>${esc(FBPROY())}</b>). Se arregla una sola vez:</p>
+  <ol class="small" style="margin:0 0 6px;padding-left:18px"><li>Entrá a <b>console.firebase.google.com</b> y abrí el proyecto <b>${esc(FBPROY())}</b>.</li><li><b>Realtime Database</b> → pestaña <b>Reglas</b>.</li><li>Reemplazá todo por lo siguiente y tocá <b>Publicar</b>:</li></ol>
+  <pre style="background:var(--in);border:1px solid var(--br);border-radius:8px;padding:8px;margin:0;white-space:pre-wrap">{"rules":{".read":true,".write":true}}</pre>
+  <p class="small" style="margin:6px 0 0">Si las visitas se guardan bien pero esto no, es porque las reglas actuales solo permiten algunas partes (colgantes e historial) y no <b>config</b>: con esa regla queda resuelto.</p>`}
+async function avProbar(){
+  $('avdiag').textContent='Probando…';
+  try{const v=Date.now();await dbSet('config/ping',v);const r=await dbGet('config/ping');
+    $('avdiag').innerHTML=r===v?'<span style="color:var(--ok);font-weight:700">✅ Todo bien: los avisos se guardan correctamente.</span>':'⚠ Se conectó, pero la lectura no coincide.'}
+  catch(e){avFallo()}}
 function avRender(){
   if(!$('avon'))return;
   $('avon').checked=AV.on;$('avhs').value=String(AV.hs);$('avd').value=AV.d;$('avh').value=AV.h;
-  $('ejs').value=AV.ej.s||'';$('ejt').value=AV.ej.t||'';$('ejk').value=AV.ej.k||'';
   const btn=(f,i)=>`<button style="width:auto;margin:0;padding:4px 10px" onclick="${f}(${i})" title="Quitar">✕</button>`;
-  $('avem').innerHTML=AV.em.length?AV.em.map((m,i)=>`<div class="sr" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(m)}</span>${btn('avDelEm',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún mail.</div>';
-  $('avwa').innerHTML=AV.wa.length?AV.wa.map((w,i)=>`<div class="sr" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span><b>${esc(w.n||'—')}</b> · ${esc(w.t)} <span class="small">${w.k?'· ✔ automático':'· solo manual (sin clave)'}</span></span>${btn('avDelWa',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún número.</div>';
+  $('avem').innerHTML=AV.em.length?AV.em.map((m,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(m)}</span>${btn('avDelEm',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún mail.</div>';
+  $('avwa').innerHTML=AV.wa.length?AV.wa.map((w,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span><b>${esc(w.n||'—')}</b> · ${esc(w.t)} <span class="small">${w.k?'· ✔ automático':''}</span></span>${btn('avDelWa',i)}</div>`).join(''):'<div class="small">Todavía no cargaste ningún número.</div>';
+  if($('avde'))$('avde').textContent=AV.de||'todavía sin instalar';
   avEstado()}
 function avEstado(){
   if(!$('avest'))return;
-  const prox=AV.ult?new Date(AV.ult+AV.hs*3600000):null;
   $('avest').innerHTML=(AV.on?`🟢 Activo · de ${AV.d} a ${AV.h} hs · cada ${AV.hs} h`:'⚪ Desactivado')
-    +(AV.ult?`<br>Último chequeo: <b>${fh(AV.ult)}</b>${AV.res?' · '+esc(AV.res):''}`:'')
-    +(AV.on&&prox?`<br>Próximo: a partir de las <b>${pad(prox.getHours())}:${pad(prox.getMinutes())}</b>`:'')}
+    +(AV.ult?`<br>Último aviso: <b>${fh(AV.ult)}</b>${AV.res?' · '+esc(AV.res):''}`:(AV.on?'<br>Todavía no se envió ningún aviso (¿ya instalaste el script de Google?).':''))}
 async function avCfg(){
   AV.on=$('avon').checked;AV.hs=+$('avhs').value||2;
   AV.d=Math.min(23,Math.max(0,+$('avd').value||0));AV.h=Math.min(24,Math.max(AV.d+1,+$('avh').value||20));
   $('avd').value=AV.d;$('avh').value=AV.h;
-  try{await avSet('on',AV.on);await avSet('hs',AV.hs);await avSet('d',AV.d);await avSet('h',AV.h)}catch(e){alert('No se pudo guardar la configuración.')}
+  try{await avSet('on',AV.on);await avSet('hs',AV.hs);await avSet('d',AV.d);await avSet('h',AV.h);$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Guardado</span>'}catch(e){avFallo()}
   avEstado()}
-async function avSaveEj(){
-  AV.ej={s:$('ejs').value.trim(),t:$('ejt').value.trim(),k:$('ejk').value.trim()};
-  try{await avSet('ej',AV.ej);alert('Datos de EmailJS guardados.')}catch(e){alert('No se pudo guardar.')}}
 async function avAddEm(){
   const v=$('avemn').value.trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){alert('Ese mail no parece válido.');return}
   if(AV.em.includes(v)){$('avemn').value='';return}
   AV.em.push(v);$('avemn').value='';
-  try{await avSet('em',AV.em)}catch(e){alert('No se pudo guardar.')}avRender()}
-async function avDelEm(i){AV.em.splice(i,1);try{await avSet('em',AV.em.length?AV.em:null)}catch(e){}avRender()}
+  try{await avSet('em',AV.em);$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Guardado</span>'}catch(e){AV.em.pop();avFallo()}avRender()}
+async function avDelEm(i){const old=AV.em.slice();AV.em.splice(i,1);try{await avSet('em',AV.em.length?AV.em:null)}catch(e){AV.em=old;avFallo()}avRender()}
+const waNorm=s=>{let d=String(s||'').replace(/\D/g,'').replace(/^0+/,'');if(!d.startsWith('54'))d='549'+d.replace(/^(\d{2,4})15/,'$1');return d};
 async function avAddWa(){
-  const t=$('avwt').value.replace(/\D/g,''),n=$('avwn').value.trim(),k=$('avwk').value.trim();
-  if(t.length<11){alert('Poné el número completo con código de país y sin 0 ni 15. Ej: 5491122334455');return}
+  const t=waNorm($('avwt').value),n=$('avwn').value.trim(),k=($('avwk')?$('avwk').value:'').trim();
+  if(t.length<12||t.length>13){alert('Poné el número con código de área, sin 0 ni 15. Ej: 11 5555 1234');return}
   if(AV.wa.some(w=>w.t===t))return;
-  AV.wa.push({n,t,k});['avwn','avwt','avwk'].forEach(i=>$(i).value='');
-  try{await avSet('wa',AV.wa)}catch(e){alert('No se pudo guardar.')}avRender()}
-async function avDelWa(i){AV.wa.splice(i,1);try{await avSet('wa',AV.wa.length?AV.wa:null)}catch(e){}avRender()}
+  AV.wa.push({n,t,k});['avwn','avwt','avwk'].forEach(i=>{if($(i))$(i).value=''});
+  try{await avSet('wa',AV.wa);$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Guardado</span>'}catch(e){AV.wa.pop();avFallo()}avRender()}
+async function avDelWa(i){const old=AV.wa.slice();AV.wa.splice(i,1);try{await avSet('wa',AV.wa.length?AV.wa:null)}catch(e){AV.wa=old;avFallo()}avRender()}
 
 const durTxt=ms=>{const m=Math.max(0,Math.round(ms/60000)),h=Math.floor(m/60);return h?`${h} h ${m%60} min`:`${m} min`};
 function avMensaje(c,now){
@@ -456,51 +555,24 @@ function avMensaje(c,now){
   if(!L.length)return{n:0,txt:`🏭 Chequeo de visitas ${hh}\nNo hay visitas registradas en depósito.`};
   const lines=L.map(v=>`• Colgante ${v.c} · ${v.n}${v.e?' ('+v.e+')':''} · visita a ${v.r} · ingresó ${fh(v.t).slice(11)} (${durTxt(now-v.t)})${now>v.t+v.h*3600000?' ⚠ VENCIDA':''}`);
   return{n:L.length,txt:`🏭 Chequeo de visitas ${hh}\nHay ${L.length} ${L.length===1?'persona registrada':'personas registradas'} en depósito:\n\n${lines.join('\n')}\n\nSi alguien ya se fue, registrá su salida en recepción.`}}
-async function avEnviar(manual){
-  const now=Date.now(),c=(await dbGet('colgantes'))||{},m=avMensaje(c,now),res=[];
-  if(!m.n&&!manual)return'sin visitas adentro';
-  const txt=m.txt;
-  // mails
-  if(AV.em.length){
-    const E=AV.ej||{};
-    if(!(E.s&&E.t&&E.k))res.push('mail: faltan datos de EmailJS');
-    else try{
-      const x=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({service_id:E.s,template_id:E.t,user_id:E.k,template_params:{to_email:AV.em.join(','),to_name:'Equipo',subject:`Chequeo de visitas en depósito (${m.n})`,message:txt}})});
-      res.push(x.ok?`mail ✔ (${AV.em.length})`:'mail ✖ error de EmailJS')}catch(e){res.push('mail ✖ sin conexión')}}
-  // whatsapp automático (CallMeBot)
-  const conK=AV.wa.filter(w=>w.k),sinK=AV.wa.filter(w=>!w.k);
-  for(const w of conK){
-    try{await fetch(`https://api.callmebot.com/whatsapp.php?phone=${w.t}&text=${encodeURIComponent(txt)}&apikey=${encodeURIComponent(w.k)}`,{mode:'no-cors'});res.push('WhatsApp ✔ '+(w.n||w.t))}
-    catch(e){res.push('WhatsApp ✖ '+(w.n||w.t))}}
-  if(sinK.length)res.push(`${sinK.length} WhatsApp sin clave (solo manual)`);
-  if(manual&&$('avlinks'))$('avlinks').innerHTML=sinK.length?'<div class="small">Abrí el mensaje ya escrito para quienes no tienen clave:</div>'+sinK.map(w=>`<a class="bl" style="display:inline-block;margin:6px 8px 0 0;padding:8px 12px;border-radius:10px;background:#25d366;color:#04210f;text-decoration:none;font-weight:700" href="https://wa.me/${w.t}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">📲 ${esc(w.n||w.t)}</a>`).join(''):'';
-  return res.join(' · ')||'sin destinatarios cargados'}
+/* WhatsApp con un toque: abre el mensaje ya escrito en el WhatsApp de quien toca */
+function avWaManual(){
+  const T=encodeURIComponent(avMensaje(col,Date.now()).txt),st='display:inline-block;margin:6px 8px 0 0;padding:8px 12px;border-radius:10px;background:#25d366;color:#04210f;text-decoration:none;font-weight:700';
+  $('avlinks').innerHTML='<div class="small">Tocá un contacto para abrir el mensaje ya escrito:</div>'+(AV.wa.length?AV.wa.map(w=>`<a style="${st}" href="https://wa.me/${w.t}?text=${T}" target="_blank" rel="noopener">📲 ${esc(w.n||w.t)}</a>`).join(''):`<a style="${st}" href="https://wa.me/?text=${T}" target="_blank" rel="noopener">📲 Elegir contacto</a>`)}
+/* "Enviar ahora": deja un pedido en la base y el script de Google lo envía en los próximos minutos */
 async function avAhora(){
-  $('avest').textContent='Enviando…';
-  try{const r=await avEnviar(true);AV.res=r;AV.ult=Date.now();await avSet('ult',AV.ult);await avSet('res',r)}
-  catch(e){$('avest').textContent='No se pudo enviar. Revisá la conexión.';return}
-  avEstado()}
-let avBusy=false;
+  try{await avSet('ahora',Date.now());$('avdiag').innerHTML='<span style="color:var(--ok)">✔ Pedido enviado.</span> El mail llega en unos minutos (hasta 5). Cuando salga, aparece arriba en “Último aviso”.'}
+  catch(e){avFallo()}}
 async function avTick(){
-  if(!FB||avBusy)return;avBusy=true;
-  try{
-    const cfg=avNorm(await dbGet('config/avisos'));
-    AV={...AV,on:cfg.on,hs:cfg.hs,d:cfg.d,h:cfg.h,em:cfg.em,wa:cfg.wa,ej:cfg.ej,ult:cfg.ult,res:cfg.res};
-    if($('t3')&&!$('t3').classList.contains('hide')){if(!document.activeElement||!/INPUT|SELECT/.test(document.activeElement.tagName))avRender()}
-    if(!AV.on)return;
-    const now=new Date(),hr=now.getHours();
-    if(hr<AV.d||hr>=AV.h)return;
-    if(now.getTime()-AV.ult<AV.hs*3600000-30000)return;
-    // reservar el turno primero, para que otra pantalla abierta no mande lo mismo
-    await avSet('ult',now.getTime());AV.ult=now.getTime();
-    const cfg2=avNorm(await dbGet('config/avisos'));if(cfg2.ult!==AV.ult)return;
-    const r=await avEnviar(false);AV.res=r;await avSet('res',r);avEstado()
-  }catch(e){console.warn('avTick',e)}finally{avBusy=false}}
+  if(!FB)return;
+  try{const f=document.activeElement;await avLoad();
+    if($('t3')&&!$('t3').classList.contains('hide')&&!(f&&/INPUT|SELECT/.test(f.tagName)))avRender()}catch(e){}}
 
 /* ---- inicio ---- */
 function iniciarPanel(){
   $('panel').classList.remove('hide');$('d2').value=CONFIG.COLGANTES;$('b2').classList.toggle('hide',!FB);$('b3').classList.toggle('hide',!FB);
+  $('autoc').classList.toggle('hide',!FB);
+  if(FB){try{$('autoqr').innerHTML='';new QRCode($('autoqr'),{text:autoUrl(),width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){}}
   refresh();setInterval(refresh,15000);
   if(FB){avLoad().then(()=>{avRender();avTick()});setInterval(avTick,60000)}}
 function checkPin(){
@@ -512,6 +584,7 @@ addEventListener('hashchange',()=>location.reload());
   if(dd){$('modo').textContent='Consulta de visita';vistaSnap(dd[1]);return}
   const m=location.hash.match(/^#b=(\d{1,3})$/);
   if(m){$('modo').textContent='Consulta de colgante';vistaScan(pad(+m[1]));return}
+  if(location.hash==='#ingreso'){$('modo').textContent='Registro de ingreso';vistaIngreso();return}
   let ok=!CONFIG.PIN;try{ok=ok||sessionStorage.getItem('pin')==='1'}catch(e){}
   if(ok)iniciarPanel();else $('gate').classList.remove('hide');
 })();
